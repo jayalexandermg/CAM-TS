@@ -1,0 +1,10 @@
+{
+  "*.ts": [
+    "eslint --fix",
+    "prettier --write",
+    "bash -c 'pnpm typecheck'"
+  ],
+  "*.{json,md}": [
+    "prettier --write"
+  ]
+}
