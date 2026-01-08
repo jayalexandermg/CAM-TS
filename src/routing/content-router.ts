@@ -8,6 +8,8 @@ import { HookEvent } from '../hooks/types';
 import { FileOperations } from '../memory/file-operations';
 import { DirectoryOperations } from '../memory/directory-operations';
 import { FileNamingConvention } from '../memory/file-naming';
+import { InterestingnessScorer } from '../learning/interestingness-scorer';
+import { LearnedPromoter } from '../learning/learned-promoter';
 import { ContentClassifier } from './content-classifier';
 import {
   Classification,
@@ -32,6 +34,10 @@ export interface ContentRouterOptions {
   agentsBaseDir?: string;
   /** Base directory for tasks */
   tasksBaseDir?: string;
+  /** Optional interestingness scorer for learning */
+  scorer?: InterestingnessScorer;
+  /** Optional learned event promoter */
+  promoter?: LearnedPromoter;
 }
 
 /**
@@ -48,6 +54,8 @@ export class ContentRouter {
   private readonly dirOps: DirectoryOperations;
   private readonly fileNaming: FileNamingConvention;
   private readonly config: RoutingConfig;
+  private readonly scorer?: InterestingnessScorer;
+  private readonly promoter?: LearnedPromoter;
 
   private readonly historyBaseDir: string;
   private readonly projectsBaseDir: string;
@@ -76,6 +84,8 @@ export class ContentRouter {
     this.projectsBaseDir = options.projectsBaseDir ?? 'projects';
     this.agentsBaseDir = options.agentsBaseDir ?? 'agents';
     this.tasksBaseDir = options.tasksBaseDir ?? 'tasks';
+    this.scorer = options.scorer;
+    this.promoter = options.promoter;
   }
 
   /**
@@ -84,6 +94,9 @@ export class ContentRouter {
   async route(event: HookEvent): Promise<RoutingResult> {
     // Classify the event
     const classification = this.classifier.classify(event);
+
+    // Score event for interestingness (if scorer is available)
+    const interestingnessScore = this.scorer ? this.scorer.score(event) : undefined;
 
     // Determine destinations
     const destinations = this.determineDestinations(event, classification);
@@ -100,12 +113,24 @@ export class ContentRouter {
       }
     }
 
+    // Promote if interesting (if promoter is available and score meets threshold)
+    let promotionResult;
+    if (this.promoter && interestingnessScore && destinations.length > 0) {
+      promotionResult = await this.promoter.promote(
+        event,
+        interestingnessScore,
+        destinations[0].directory
+      );
+    }
+
     return {
       event,
       destinations,
       classification,
       success: errors.length === 0,
       errors: errors.length > 0 ? errors : undefined,
+      interestingnessScore,
+      promotionResult,
     };
   }
 
@@ -279,5 +304,26 @@ export class ContentRouter {
    */
   getCachedFilenameCount(): number {
     return this.filenameCache.size;
+  }
+
+  /**
+   * Get the scorer instance (if available)
+   */
+  getScorer(): InterestingnessScorer | undefined {
+    return this.scorer;
+  }
+
+  /**
+   * Get the promoter instance (if available)
+   */
+  getPromoter(): LearnedPromoter | undefined {
+    return this.promoter;
+  }
+
+  /**
+   * Check if learning features are enabled
+   */
+  hasLearningEnabled(): boolean {
+    return this.scorer !== undefined && this.promoter !== undefined;
   }
 }

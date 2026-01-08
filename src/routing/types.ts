@@ -6,6 +6,7 @@
  */
 
 import { HookEvent } from '../hooks/types';
+import { InterestingnessScore, PromotionResult } from '../learning/types';
 
 // ============================================================================
 // Task Type Enum
@@ -80,6 +81,10 @@ export interface RoutingResult {
   success: boolean;
   /** Any errors that occurred during routing */
   errors?: string[];
+  /** Interestingness score (if scoring was enabled) */
+  interestingnessScore?: InterestingnessScore;
+  /** Promotion result (if promotion was attempted) */
+  promotionResult?: PromotionResult;
 }
 
 // ============================================================================
