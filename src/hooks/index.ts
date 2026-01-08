@@ -19,3 +19,6 @@ export * from './capture-all-handler';
 export * from './stop-handler';
 export * from './subagent-stop-handler';
 export * from './session-summary-handler';
+
+// Routing-aware handler
+export * from './routing-handler';
