@@ -62,6 +62,11 @@ export const ErrorCodes = {
   RATE_LIMIT_EXCEEDED: 'RATE_LIMIT_EXCEEDED',
   APPEND_ONLY_VIOLATION: 'APPEND_ONLY_VIOLATION',
   TEXT_ONLY_VIOLATION: 'TEXT_ONLY_VIOLATION',
+
+  // Hook System
+  INVALID_EVENT: 'INVALID_EVENT',
+  HANDLER_ERROR: 'HANDLER_ERROR',
+  AGGREGATE_HANDLER_ERROR: 'AGGREGATE_HANDLER_ERROR',
 } as const;
 
 export type ErrorCode = (typeof ErrorCodes)[keyof typeof ErrorCodes];
@@ -417,5 +422,53 @@ export class TextOnlyViolationError extends GuardrailViolationError {
     this.name = 'TextOnlyViolationError';
     this.filePath = filePath;
     this.detectedType = detectedType;
+  }
+}
+
+// ============================================================================
+// Hook System Exception Classes
+// ============================================================================
+
+/**
+ * Invalid event structure or data
+ */
+export class InvalidEventError extends ValidationError {
+  constructor(message: string, details: ErrorDetails = {}) {
+    super(message, ErrorCodes.INVALID_EVENT, details);
+    this.name = 'InvalidEventError';
+  }
+}
+
+/**
+ * Handler execution error
+ */
+export class HandlerError extends InfiniteAuraError {
+  public readonly handlerName: string;
+
+  constructor(handlerName: string, message: string, details: ErrorDetails = {}) {
+    super(`Handler '${handlerName}' failed: ${message}`, ErrorCodes.HANDLER_ERROR, {
+      ...details,
+      handlerName,
+    });
+    this.name = 'HandlerError';
+    this.handlerName = handlerName;
+  }
+}
+
+/**
+ * Aggregate error when multiple handlers fail
+ */
+export class AggregateHandlerError extends InfiniteAuraError {
+  public readonly errors: Array<{ handlerName: string; error: Error }>;
+
+  constructor(errors: Array<{ handlerName: string; error: Error }>, details: ErrorDetails = {}) {
+    const message = `${errors.length} handler(s) failed: ${errors.map((e) => e.handlerName).join(', ')}`;
+    super(message, ErrorCodes.AGGREGATE_HANDLER_ERROR, {
+      ...details,
+      failedHandlers: errors.map((e) => e.handlerName),
+      errorMessages: errors.map((e) => e.error.message),
+    });
+    this.name = 'AggregateHandlerError';
+    this.errors = errors;
   }
 }
