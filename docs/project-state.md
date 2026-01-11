@@ -15,30 +15,48 @@
 
 ## Last Completed
 
-**PROMPT 4A** - CORE Directory & 3-Tier Memory Pipeline
+**PROMPT 8A** - SessionStart Hook
 
 Added:
-- `CoreManager` class (`src/memory/core/CoreManager.ts`)
-- `MemoryPipeline` class (`src/memory/pipeline/MemoryPipeline.ts`)
-- CORE directory structure (`CORE/USER.md`, `CORE/PREFERENCES.md`, `CORE/ACTIVE_PROJECTS.md`)
-- 3-tier pipeline directories:
-  - `work/` (CAPTURE tier): INBOX/, SCRATCHPAD/, OBSERVATIONS/
-  - `learning/` (SYNTHESIS tier): PATTERNS/, INSIGHTS/, LEARNINGS/, DECISIONS/
-  - `archive/` (APPLICATION tier): KNOWLEDGE/, PROCEDURES/, REFERENCE/, ARCHIVE/
+- `PrepromptInjector` class (`src/context/PrepromptInjector.ts`)
+- `SessionStartHook` class (`src/hooks/SessionStartHook.ts`)
+- `SessionManager` class (`src/session/SessionManager.ts`)
+- SESSION_START event type and metadata types
+- 92 new tests for PROMPT 8A components
 
 ## Next
 
-**PROMPT 8A** - SessionStart Hook
+**PROMPT 9A** - Content-Based Routing
 
 Will implement:
-- SessionStart hook to load CORE context on session start
-- Integration with CoreManager for user identity hydration
+- Content-based routing for context injection
+- Rule-based system for determining what context to load
 
 ## Test Status
 
-- **Total Tests**: 1097
-- **Coverage**: 92.58%
+- **Total Tests**: 1246
+- **Coverage**: 92.5%
 - **Status**: All passing (1 flaky performance test excluded)
+
+## New Components from PROMPT 8A
+
+### PrepromptInjector
+- Location: `src/context/PrepromptInjector.ts`
+- Purpose: Composes system prompts with injected context layers
+- Key methods: `injectContext()`, `getSystemPrompt()`, `clearLayer()`, `clearAll()`, `getLayerContext()`
+- Features: Priority-based layer ordering, custom markers, empty layer filtering
+
+### SessionStartHook
+- Location: `src/hooks/SessionStartHook.ts`
+- Purpose: Fires on SESSION_START to load CORE context into preprompt
+- Key methods: `execute()`, `handle()`, `getLastLoadedContext()`, `getLastSessionId()`
+- Features: Auto-initializes CORE, outputs confirmation, configurable layer name/priority
+
+### SessionManager
+- Location: `src/session/SessionManager.ts`
+- Purpose: Manages session lifecycle and emits session events
+- Key methods: `startSession()`, `resumeSession()`, `endSession()`, `getCurrentSession()`
+- Features: Unique session ID generation, session state tracking, event emission
 
 ## New Components from PROMPT 4A
 

@@ -22,3 +22,6 @@ export * from './session-summary-handler';
 
 // Routing-aware handler
 export * from './routing-handler';
+
+// Session start hook
+export * from './SessionStartHook';

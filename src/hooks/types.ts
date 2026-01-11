@@ -21,6 +21,8 @@ export enum EventType {
   SUBAGENT_STOP = 'subagent_stop',
   /** End-of-session reflections and summaries */
   SESSION_SUMMARY = 'session_summary',
+  /** Session start event - fires when a new session begins */
+  SESSION_START = 'session_start',
 }
 
 // ============================================================================
@@ -116,4 +118,40 @@ export interface HandlerError {
   error: Error;
   /** The event that was being processed */
   event: HookEvent;
+}
+
+// ============================================================================
+// Session Start Event
+// ============================================================================
+
+/**
+ * Metadata specific to session start events
+ */
+export interface SessionStartMetadata extends EventMetadata {
+  /** Whether this is resuming an existing session */
+  resuming?: boolean;
+  /** Previous session ID if resuming */
+  previousSessionId?: string;
+}
+
+/**
+ * Session start event that fires when a new session begins
+ */
+export interface SessionStartEvent extends HookEvent {
+  /** Event type is always SESSION_START */
+  type: EventType.SESSION_START;
+  /** Session-specific metadata */
+  metadata: SessionStartMetadata;
+}
+
+/**
+ * Result from executing a hook
+ */
+export interface HookResult {
+  /** Whether the hook executed successfully */
+  success: boolean;
+  /** Error message if failed */
+  error?: string;
+  /** Any data returned by the hook */
+  data?: Record<string, unknown>;
 }

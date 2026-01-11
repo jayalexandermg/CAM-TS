@@ -51,3 +51,10 @@ export {
   DynamicContextLoaderConfig,
   DEFAULT_DYNAMIC_CONTEXT_LOADER_CONFIG,
 } from './dynamic-context-loader';
+
+// Preprompt injection
+export {
+  PrepromptInjector,
+  PrepromptInjectorOptions,
+  PrepromptLayer,
+} from './PrepromptInjector';

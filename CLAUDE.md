@@ -29,8 +29,8 @@ pnpm lint
 ## Project State
 
 - **Phase 1**: Complete (including PROMPT 4A)
-- **Phase 2**: In progress
-- **Next**: PROMPT 8A (SessionStart Hook)
+- **Phase 2**: In progress (PROMPT 8A complete)
+- **Next**: PROMPT 9A (Content-Based Routing)
 
 ## Architecture
 
@@ -40,3 +40,6 @@ Key components:
 - `MemoryScaffold` - Main memory management class
 - `CoreManager` - CORE directory for user identity
 - `MemoryPipeline` - 3-tier memory pipeline (work/learning/archive)
+- `PrepromptInjector` - System prompt composition with context layers
+- `SessionManager` - Session lifecycle management
+- `SessionStartHook` - Loads CORE context on session start
