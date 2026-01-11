@@ -173,4 +173,151 @@ describe('MemoryScaffold', () => {
       expect(destroyScaffold.isInitialized()).toBe(false);
     });
   });
+
+  // =========================================================================
+  // CORE Manager Integration Tests
+  // =========================================================================
+
+  describe('CORE integration', () => {
+    it('should initialize CORE directory on scaffold initialization', async () => {
+      await scaffold.initialize();
+      const corePath = path.join(testBasePath, 'CORE');
+      const exists = await fs.promises.stat(corePath).then(() => true).catch(() => false);
+      expect(exists).toBe(true);
+    });
+
+    it('should provide access to CoreManager via getCore()', async () => {
+      await scaffold.initialize();
+      const coreManager = scaffold.getCore();
+      expect(coreManager).toBeDefined();
+    });
+
+    it('should have valid CORE structure after initialization', async () => {
+      await scaffold.initialize();
+      const coreManager = scaffold.getCore();
+      const isValid = await coreManager.validateCore();
+      expect(isValid).toBe(true);
+    });
+
+    it('should create CORE files on initialization', async () => {
+      await scaffold.initialize();
+      const coreFiles = [
+        path.join(testBasePath, 'CORE', 'USER.md'),
+        path.join(testBasePath, 'CORE', 'PREFERENCES.md'),
+        path.join(testBasePath, 'CORE', 'ACTIVE_PROJECTS.md'),
+      ];
+
+      for (const file of coreFiles) {
+        const exists = await fs.promises.stat(file).then(() => true).catch(() => false);
+        expect(exists).toBe(true);
+      }
+    });
+
+    it('should allow reading and writing CORE files through scaffold', async () => {
+      await scaffold.initialize();
+      const coreManager = scaffold.getCore();
+
+      const newContent = '# Custom User\n\nName: Test User';
+      await coreManager.updateUser(newContent);
+
+      const content = await coreManager.readUser();
+      expect(content).toBe(newContent);
+    });
+
+    it('should load CORE context through scaffold', async () => {
+      // Use a fresh scaffold to avoid state from previous tests
+      const freshPath = path.join(os.tmpdir(), 'core-context-test-' + Date.now());
+      const freshScaffold = new MemoryScaffold(freshPath);
+
+      try {
+        await freshScaffold.initialize();
+        const coreManager = freshScaffold.getCore();
+
+        const context = await coreManager.loadCore();
+        expect(context.user).toContain('# User Identity');
+        expect(context.preferences).toContain('# User Preferences');
+        expect(context.activeProjects).toContain('# Active Projects');
+      } finally {
+        await freshScaffold.destroy();
+      }
+    });
+  });
+
+  // =========================================================================
+  // Memory Pipeline Integration Tests
+  // =========================================================================
+
+  describe('pipeline integration', () => {
+    it('should initialize 3-tier pipeline on scaffold initialization', async () => {
+      await scaffold.initialize();
+
+      const tierDirs = [
+        path.join(testBasePath, 'work'),
+        path.join(testBasePath, 'learning'),
+        path.join(testBasePath, 'archive'),
+      ];
+
+      for (const dir of tierDirs) {
+        const exists = await fs.promises.stat(dir).then(() => true).catch(() => false);
+        expect(exists).toBe(true);
+      }
+    });
+
+    it('should provide access to MemoryPipeline via getPipeline()', async () => {
+      await scaffold.initialize();
+      const pipeline = scaffold.getPipeline();
+      expect(pipeline).toBeDefined();
+    });
+
+    it('should have valid tier structure after initialization', async () => {
+      await scaffold.initialize();
+      const pipeline = scaffold.getPipeline();
+      const result = await pipeline.validateTiers();
+      expect(result.valid).toBe(true);
+    });
+
+    it('should create tier subdirectories on initialization', async () => {
+      await scaffold.initialize();
+
+      const subdirs = [
+        // CAPTURE tier
+        path.join(testBasePath, 'work', 'INBOX'),
+        path.join(testBasePath, 'work', 'SCRATCHPAD'),
+        path.join(testBasePath, 'work', 'OBSERVATIONS'),
+        // SYNTHESIS tier
+        path.join(testBasePath, 'learning', 'PATTERNS'),
+        path.join(testBasePath, 'learning', 'INSIGHTS'),
+        // APPLICATION tier
+        path.join(testBasePath, 'archive', 'KNOWLEDGE'),
+        path.join(testBasePath, 'archive', 'PROCEDURES'),
+      ];
+
+      for (const dir of subdirs) {
+        const exists = await fs.promises.stat(dir).then(() => true).catch(() => false);
+        expect(exists).toBe(true);
+      }
+    });
+
+    it('should allow content promotion through scaffold', async () => {
+      await scaffold.initialize();
+      const pipeline = scaffold.getPipeline();
+      const fileOps = scaffold.getFileOps();
+
+      // Create a file in CAPTURE tier
+      await fileOps.writeFile('work/INBOX/note.md', '# Raw Note');
+
+      // Promote to SYNTHESIS tier
+      const result = await pipeline.promote(
+        'work/INBOX/note.md',
+        'learning/PATTERNS/pattern.md',
+        '# Processed Pattern'
+      );
+
+      expect(result.success).toBe(true);
+
+      // Verify new file exists
+      const content = await fileOps.readFile('learning/PATTERNS/pattern.md');
+      expect(content).toBe('# Processed Pattern');
+    });
+  });
 });

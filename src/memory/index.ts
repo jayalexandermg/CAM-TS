@@ -21,3 +21,14 @@ export {
   SecuritySeverity,
   SecurityAuditLoggerOptions,
 } from './security-audit';
+
+// CORE manager exports
+export { CoreManager, CoreContext, CoreManagerOptions } from './core';
+
+// Memory pipeline exports
+export {
+  MemoryPipeline,
+  MemoryTier,
+  TierValidationResult,
+  PromotionResult,
+} from './pipeline';

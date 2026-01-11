@@ -3,6 +3,8 @@ import { DirectoryOperations, DirectoryValidationResult } from './directory-oper
 import { FileOperations } from './file-operations';
 import { SecurityAuditLogger, SecurityEventType } from './security-audit';
 import { MemoryError, ErrorCodes } from '../exceptions';
+import { CoreManager } from './core/CoreManager';
+import { MemoryPipeline } from './pipeline/MemoryPipeline';
 
 export interface ValidationResult {
   valid: boolean;
@@ -36,6 +38,14 @@ export interface MemoryScaffoldOptions {
 }
 
 const MEMORY_DIRECTORIES = [
+  // Root level directories
+  'CONTEXT',
+  'PROJECTS',
+  'SKILLS',
+  'WORKFLOWS',
+  'TOOLS',
+  'AGENTS',
+  // Legacy directories (kept for backward compatibility)
   'context',
   'projects',
   'agents',
@@ -105,6 +115,8 @@ export class MemoryScaffold {
   private readonly fileOps: FileOperations;
   private readonly securityAudit?: SecurityAuditLogger;
   private readonly maxDepth: number;
+  private readonly coreManager: CoreManager;
+  private readonly memoryPipeline: MemoryPipeline;
   private initialized: boolean = false;
   private lastAuditTime?: Date;
   private violationCount: number = 0;
@@ -133,6 +145,10 @@ export class MemoryScaffold {
       securityAudit: this.securityAudit,
       enableLocking: true,
     });
+
+    // Initialize CORE manager and memory pipeline
+    this.coreManager = new CoreManager(this.basePath);
+    this.memoryPipeline = new MemoryPipeline(this.basePath);
   }
 
   async initialize(): Promise<void> {
@@ -157,6 +173,10 @@ export class MemoryScaffold {
           await this.fileOps.writeFile(gitkeepPath, '');
         }
       }
+
+      // Initialize CORE directory and 3-tier memory pipeline
+      await this.coreManager.initialize();
+      await this.memoryPipeline.initialize();
 
       this.initialized = true;
     } catch (error) {
@@ -233,6 +253,20 @@ export class MemoryScaffold {
 
   isInitialized(): boolean {
     return this.initialized;
+  }
+
+  /**
+   * Get the CORE manager for user identity operations
+   */
+  getCore(): CoreManager {
+    return this.coreManager;
+  }
+
+  /**
+   * Get the memory pipeline for tier operations
+   */
+  getPipeline(): MemoryPipeline {
+    return this.memoryPipeline;
   }
 
   async destroy(): Promise<void> {
