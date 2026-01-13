@@ -5,8 +5,28 @@
  * Supports registering handlers, emitting events, and error handling.
  */
 
-import { AggregateHandlerError } from '../exceptions';
-import { HookEvent, HookHandler, EventEmitterOptions, HandlerError, EventType } from './types';
+import { AggregateHandlerError, HookBlockedError } from '../exceptions';
+import {
+  HookEvent,
+  HookHandler,
+  EventEmitterOptions,
+  HandlerError,
+  EventType,
+  HookResult,
+  HookAction,
+} from './types';
+
+/**
+ * Interface for hook handlers that support enforcement (returning HookResult)
+ */
+export interface EnforcingHookHandler extends HookHandler {
+  /**
+   * Execute the hook and return an enforcement result
+   * @param event The event to process
+   * @returns HookResult with action (ALLOW, BLOCK, or MODIFY)
+   */
+  execute?(event: HookEvent): Promise<HookResult>;
+}
 
 /**
  * Event emitter for the hook system
@@ -194,5 +214,133 @@ export class HookEventEmitter {
    */
   getOptions(): Readonly<Required<EventEmitterOptions>> {
     return { ...this.options };
+  }
+
+  // ==========================================================================
+  // Enforcement Methods
+  // ==========================================================================
+
+  /**
+   * Execute a specific hook and enforce its result
+   *
+   * This method is used when you need to execute a single hook and enforce
+   * its result (ALLOW, BLOCK, or MODIFY). Unlike emit(), this method:
+   * - Executes only the specified hook (by name)
+   * - Enforces the hook result (throws HookBlockedError on BLOCK)
+   * - Returns the HookResult for ALLOW or MODIFY
+   *
+   * @param handlerName The name of the handler to execute
+   * @param event The event to process
+   * @returns HookResult with action and optional data
+   * @throws HookBlockedError if hook returns BLOCK action
+   */
+  async executeHook(handlerName: string, event: HookEvent): Promise<HookResult> {
+    const handler = this.handlers.get(handlerName) as EnforcingHookHandler | undefined;
+
+    if (!handler) {
+      // No handler registered - allow by default
+      return { action: HookAction.ALLOW, success: true };
+    }
+
+    // Check if handler supports enforcement (has execute method)
+    if (!handler.execute) {
+      // Legacy handler - call handle and return ALLOW
+      await handler.handle(event);
+      return { action: HookAction.ALLOW, success: true };
+    }
+
+    // Execute the enforcing handler
+    const result = await handler.execute(event);
+
+    // Determine action (default to ALLOW if not specified)
+    const action = result.action ?? HookAction.ALLOW;
+
+    // Enforce BLOCK action
+    if (action === HookAction.BLOCK) {
+      throw new HookBlockedError(
+        result.reason || 'Operation blocked by hook',
+        handlerName,
+        event as unknown as Record<string, unknown>
+      );
+    }
+
+    return {
+      ...result,
+      action,
+    };
+  }
+
+  /**
+   * Execute a hook and apply data modifications if any
+   *
+   * This method is used when you have data that may be modified by a hook.
+   * It executes the hook, enforces BLOCK if returned, and applies MODIFY.
+   *
+   * @param handlerName The name of the handler to execute
+   * @param event The event to process
+   * @param data The data that may be modified by the hook
+   * @returns The original or modified data
+   * @throws HookBlockedError if hook returns BLOCK action
+   */
+  async executeHookWithData<T extends Record<string, unknown>>(
+    handlerName: string,
+    event: HookEvent,
+    data: T
+  ): Promise<T> {
+    const result = await this.executeHook(handlerName, event);
+
+    // If MODIFY action with data, return the modified data
+    if (result.action === HookAction.MODIFY && result.data) {
+      return result.data as T;
+    }
+
+    // Otherwise return original data
+    return data;
+  }
+
+  /**
+   * Execute hooks for an event type with enforcement
+   *
+   * Unlike emit(), this method processes hooks sequentially and enforces
+   * results. If any hook returns BLOCK, execution stops and error is thrown.
+   * MODIFY results are accumulated and returned.
+   *
+   * @param event The event to process
+   * @returns Array of HookResults from all executed hooks
+   * @throws HookBlockedError if any hook returns BLOCK action
+   */
+  async executeHooksWithEnforcement(event: HookEvent): Promise<HookResult[]> {
+    const targetHandlers = this.getTargetHandlers(event.type);
+    const results: HookResult[] = [];
+
+    // Execute handlers sequentially for enforcement
+    for (const handler of targetHandlers) {
+      const enforcingHandler = handler as EnforcingHookHandler;
+
+      let result: HookResult;
+
+      if (enforcingHandler.execute) {
+        result = await enforcingHandler.execute(event);
+      } else {
+        // Legacy handler
+        await handler.handle(event);
+        result = { action: HookAction.ALLOW, success: true };
+      }
+
+      const action = result.action ?? HookAction.ALLOW;
+
+      // Enforce BLOCK action
+      if (action === HookAction.BLOCK) {
+        throw new HookBlockedError(
+          result.reason || 'Operation blocked by hook',
+          handler.name,
+          event as unknown as Record<string, unknown>
+        );
+      }
+
+      results.push({ ...result, action });
+    }
+
+    return results;
   }
 }

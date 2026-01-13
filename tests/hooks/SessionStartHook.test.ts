@@ -4,7 +4,10 @@ import * as fs from 'fs';
 import { SessionStartHook } from '../../src/hooks/SessionStartHook';
 import { CoreManager } from '../../src/memory/core';
 import { PrepromptInjector } from '../../src/context/PrepromptInjector';
-import { EventType, SessionStartEvent } from '../../src/hooks/types';
+import { PrepromptHydrator } from '../../src/context/PrepromptHydrator';
+import { SkillManager } from '../../src/skills';
+import { LAYER_NAMES } from '../../src/context/preprompt-hydrator-types';
+import { EventType, SessionStartEvent, HookAction } from '../../src/hooks/types';
 
 describe('SessionStartHook', () => {
   const testBasePath = path.join(os.tmpdir(), 'infinite-aura-test-session-start-hook');
@@ -138,6 +141,32 @@ describe('SessionStartHook', () => {
       const resumeEvent = createSessionStartEvent('session-2', true);
       const result2 = await hook.execute(resumeEvent);
       expect(result2.data?.resuming).toBe(true);
+    });
+
+    it('should return ALLOW action on success', async () => {
+      await coreManager.initialize();
+      const event = createSessionStartEvent();
+
+      const result = await hook.execute(event);
+
+      expect(result.action).toBe(HookAction.ALLOW);
+      expect(result.metadata?.contextLoaded).toBe(true);
+    });
+
+    it('should return ALLOW action even on error (session should not be blocked)', async () => {
+      // Create hook with a non-existent path that will cause an error
+      const brokenCoreManager = new CoreManager('/nonexistent/path/that/should/not/exist');
+      const brokenHook = new SessionStartHook(brokenCoreManager, prepromptInjector, {
+        outputConfirmation: true,
+        outputFn: mockOutputFn,
+      });
+
+      const event = createSessionStartEvent();
+      const result = await brokenHook.execute(event);
+
+      // Even on error, session should be allowed to proceed
+      expect(result.action).toBe(HookAction.ALLOW);
+      expect(result.metadata?.contextLoaded).toBe(false);
     });
   });
 
@@ -369,6 +398,123 @@ describe('SessionStartHook', () => {
 
       // Context should still be loaded
       expect(prepromptInjector.hasLayer('core')).toBe(true);
+    });
+  });
+
+  // =========================================================================
+  // Hydrator Mode Tests
+  // =========================================================================
+
+  describe('hydrator mode', () => {
+    let skillManager: SkillManager;
+    let hydrator: PrepromptHydrator;
+    let hydratorHook: SessionStartHook;
+
+    beforeEach(async () => {
+      // Clean up SKILLS directory
+      const skillsPath = path.join(testBasePath, 'SKILLS');
+      await fs.promises.rm(skillsPath, { recursive: true, force: true }).catch(() => {});
+
+      skillManager = new SkillManager(testBasePath);
+      await skillManager.initialize();
+
+      hydrator = new PrepromptHydrator(coreManager, skillManager, prepromptInjector);
+      hydratorHook = new SessionStartHook(coreManager, prepromptInjector, {
+        outputConfirmation: true,
+        outputFn: mockOutputFn,
+      }, hydrator);
+    });
+
+    it('should return null hydrator for legacy mode', () => {
+      expect(hook.getHydrator()).toBeNull();
+      expect(hook.isUsingHydrator()).toBe(false);
+    });
+
+    it('should return hydrator for hydrator mode', () => {
+      expect(hydratorHook.getHydrator()).toBe(hydrator);
+      expect(hydratorHook.isUsingHydrator()).toBe(true);
+    });
+
+    it('should use hydrator for Layer 1 loading', async () => {
+      await coreManager.initialize();
+      const event = createSessionStartEvent();
+
+      await hydratorHook.execute(event);
+
+      // Hydrator should have Layer 1 loaded
+      expect(hydrator.hasLayer1()).toBe(true);
+    });
+
+    it('should inject Layer 1 via hydrator', async () => {
+      await coreManager.initialize();
+      await coreManager.updateUser('Hydrator User');
+      const event = createSessionStartEvent();
+
+      await hydratorHook.execute(event);
+
+      // Check that Layer 1 is injected with hydrator layer names
+      expect(prepromptInjector.hasLayer(LAYER_NAMES.LAYER1_USER)).toBe(true);
+      expect(prepromptInjector.getLayerContext(LAYER_NAMES.LAYER1_USER)).toContain('Hydrator User');
+    });
+
+    it('should return hydrator mode in result', async () => {
+      await coreManager.initialize();
+      const event = createSessionStartEvent();
+
+      const result = await hydratorHook.execute(event);
+
+      expect(result.data?.useHydrator).toBe(true);
+      expect(result.metadata?.layer1Loaded).toBe(true);
+    });
+
+    it('should output confirmation in hydrator mode', async () => {
+      await coreManager.initialize();
+      const event = createSessionStartEvent();
+
+      await hydratorHook.execute(event);
+
+      expect(outputMessages.length).toBeGreaterThan(0);
+      expect(outputMessages[0]).toContain('[SessionStart]');
+    });
+
+    it('should produce correct system prompt in hydrator mode', async () => {
+      const inj = new PrepromptInjector({ baseSystemPrompt: 'Base prompt.' });
+      const newHydrator = new PrepromptHydrator(coreManager, skillManager, inj);
+      const newHook = new SessionStartHook(coreManager, inj, {
+        outputFn: mockOutputFn,
+      }, newHydrator);
+
+      await coreManager.initialize();
+      await coreManager.updateUser('# User\nName: Bob');
+
+      const event = createSessionStartEvent();
+      await newHook.execute(event);
+
+      const systemPrompt = inj.getSystemPrompt();
+      expect(systemPrompt).toContain('Base prompt.');
+      expect(systemPrompt).toContain('Bob');
+    });
+
+    it('should handle errors in hydrator mode gracefully', async () => {
+      // Don't initialize CORE
+      const event = createSessionStartEvent();
+
+      // Should not throw, should auto-initialize
+      const result = await hydratorHook.execute(event);
+      expect(result.success).toBe(true);
+    });
+
+    it('should maintain backward compatibility with legacy mode', async () => {
+      await coreManager.initialize();
+      await coreManager.updateUser('Legacy User');
+      const event = createSessionStartEvent();
+
+      // Legacy mode hook
+      await hook.execute(event);
+
+      // Should use the legacy 'core' layer
+      expect(prepromptInjector.hasLayer('core')).toBe(true);
+      expect(prepromptInjector.getLayerContext('core')).toContain('Legacy User');
     });
   });
 });

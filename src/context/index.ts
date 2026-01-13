@@ -3,6 +3,10 @@
  *
  * Dynamic 4-layer context loading system for CAM.
  * Layers: User → Project → Session → Agent
+ *
+ * Also includes two-layer preprompt hydration system:
+ * Layer 1 (Global): CORE context loaded at session start
+ * Layer 2 (Agent-Specific): Skill context loaded on demand
  */
 
 // Types and interfaces
@@ -25,6 +29,20 @@ export {
   PROJECT_CONTEXT_FILES,
   AGENT_CONTEXT_FILES,
 } from './types';
+
+// Preprompt hydrator types
+export {
+  SkillAgentContext,
+  ScoredContext,
+  CachedLayer,
+  PrepromptHydratorConfig,
+  DEFAULT_PREPROMPT_HYDRATOR_CONFIG,
+  LAYER_1_PRIORITIES,
+  LAYER_2_PRIORITIES,
+  LAYER_1_MARKERS,
+  LAYER_2_MARKERS,
+  LAYER_NAMES,
+} from './preprompt-hydrator-types';
 
 // Base context loader
 export { ContextLoader } from './context-loader';
@@ -58,3 +76,13 @@ export {
   PrepromptInjectorOptions,
   PrepromptLayer,
 } from './PrepromptInjector';
+
+// Token management
+export {
+  TokenManager,
+  TokenManagerConfig,
+  DEFAULT_TOKEN_MANAGER_CONFIG,
+} from './TokenManager';
+
+// Two-layer preprompt hydration
+export { PrepromptHydrator } from './PrepromptHydrator';

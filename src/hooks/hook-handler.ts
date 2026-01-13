@@ -6,7 +6,7 @@
  */
 
 import { InvalidEventError } from '../exceptions';
-import { HookEvent, HookHandler, EventType, EventMetadata } from './types';
+import { HookEvent, HookHandler, EventType, EventMetadata, HookResult, HookAction } from './types';
 
 /**
  * Options for base hook handler
@@ -127,5 +127,61 @@ export abstract class BaseHookHandler implements HookHandler {
     if (this.options.validateEvents) {
       this.validateEvent(event);
     }
+  }
+
+  // ==========================================================================
+  // Enforcement Helper Methods
+  // ==========================================================================
+
+  /**
+   * Create an ALLOW result - operation proceeds normally
+   *
+   * @param metadata Optional metadata about the hook execution
+   * @returns HookResult with ALLOW action
+   */
+  protected allow(metadata?: Record<string, unknown>): HookResult {
+    return {
+      action: HookAction.ALLOW,
+      success: true,
+      metadata,
+    };
+  }
+
+  /**
+   * Create a BLOCK result - operation is prevented
+   *
+   * @param reason Reason for blocking the operation
+   * @param metadata Optional metadata about the hook execution
+   * @returns HookResult with BLOCK action
+   */
+  protected block(reason: string, metadata?: Record<string, unknown>): HookResult {
+    return {
+      action: HookAction.BLOCK,
+      success: false,
+      reason,
+      metadata,
+    };
+  }
+
+  /**
+   * Create a MODIFY result - operation proceeds with modified data
+   *
+   * @param data The modified data to use instead of the original
+   * @param reason Optional reason for the modification
+   * @param metadata Optional metadata about the hook execution
+   * @returns HookResult with MODIFY action
+   */
+  protected modify(
+    data: Record<string, unknown>,
+    reason?: string,
+    metadata?: Record<string, unknown>
+  ): HookResult {
+    return {
+      action: HookAction.MODIFY,
+      success: true,
+      data,
+      reason,
+      metadata,
+    };
   }
 }

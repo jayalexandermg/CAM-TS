@@ -25,3 +25,9 @@ export * from './routing-handler';
 
 // Session start hook
 export * from './SessionStartHook';
+
+// Pre-tool-use hook
+export * from './PreToolUseHook';
+
+// Tool usage logger
+export * from './ToolUsageLogger';

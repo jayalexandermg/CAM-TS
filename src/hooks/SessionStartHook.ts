@@ -3,10 +3,15 @@
  *
  * Hook that fires on every session start, loads CORE context proactively,
  * and injects it into the system prompt BEFORE the AI responds.
+ *
+ * Supports two modes:
+ * 1. Legacy mode: Uses CoreManager + PrepromptInjector directly
+ * 2. Hydrator mode: Uses PrepromptHydrator for two-layer hydration
  */
 
 import { CoreManager, CoreContext } from '../memory/core';
 import { PrepromptInjector } from '../context/PrepromptInjector';
+import { PrepromptHydrator } from '../context/PrepromptHydrator';
 import { BaseHookHandler, BaseHookHandlerOptions } from './hook-handler';
 import { HookEvent, EventType, SessionStartEvent, HookResult } from './types';
 
@@ -18,9 +23,9 @@ export interface SessionStartHookOptions extends BaseHookHandlerOptions {
   outputConfirmation?: boolean;
   /** Custom output function (default: console.log) */
   outputFn?: (message: string) => void;
-  /** Priority for the CORE context layer in preprompt */
+  /** Priority for the CORE context layer in preprompt (legacy mode only) */
   corePriority?: number;
-  /** Layer name for CORE context */
+  /** Layer name for CORE context (legacy mode only) */
   coreLayerName?: string;
 }
 
@@ -43,6 +48,10 @@ const DEFAULT_OPTIONS: Required<Omit<SessionStartHookOptions, keyof BaseHookHand
  * - Injects context into the system prompt via PrepromptInjector
  * - Outputs confirmation to user
  *
+ * Supports two modes:
+ * 1. Legacy mode (coreManager + prepromptInjector): Direct context loading
+ * 2. Hydrator mode (with PrepromptHydrator): Two-layer hydration
+ *
  * The context is loaded PROACTIVELY, before the AI makes any decisions,
  * ensuring the AI knows who the user is from the start.
  */
@@ -52,6 +61,7 @@ export class SessionStartHook extends BaseHookHandler {
 
   private readonly coreManager: CoreManager;
   private readonly prepromptInjector: PrepromptInjector;
+  private readonly hydrator: PrepromptHydrator | null;
   private readonly outputConfirmation: boolean;
   private readonly outputFn: (message: string) => void;
   private readonly corePriority: number;
@@ -67,15 +77,18 @@ export class SessionStartHook extends BaseHookHandler {
    * @param coreManager - CoreManager for loading CORE context
    * @param prepromptInjector - PrepromptInjector for system prompt injection
    * @param options - Configuration options
+   * @param hydrator - Optional PrepromptHydrator for two-layer hydration mode
    */
   constructor(
     coreManager: CoreManager,
     prepromptInjector: PrepromptInjector,
-    options: SessionStartHookOptions = {}
+    options: SessionStartHookOptions = {},
+    hydrator?: PrepromptHydrator
   ) {
     super(options);
     this.coreManager = coreManager;
     this.prepromptInjector = prepromptInjector;
+    this.hydrator = hydrator ?? null;
     this.outputConfirmation = options.outputConfirmation ?? DEFAULT_OPTIONS.outputConfirmation;
     this.outputFn = options.outputFn ?? DEFAULT_OPTIONS.outputFn;
     this.corePriority = options.corePriority ?? DEFAULT_OPTIONS.corePriority;
@@ -94,46 +107,106 @@ export class SessionStartHook extends BaseHookHandler {
   /**
    * Execute the hook on session start
    * @param event - The session start event
-   * @returns Hook execution result
+   * @returns Hook execution result with enforcement action
    */
   async execute(event: SessionStartEvent): Promise<HookResult> {
     try {
       // Store session ID
       this.lastSessionId = event.metadata.sessionId ?? null;
 
-      // Load CORE context
-      const context = await this.loadCoreContext();
-
-      // Format and inject into preprompt
-      const formattedContext = this.formatContextForPreprompt(context);
-      this.prepromptInjector.injectContext(this.coreLayerName, formattedContext, this.corePriority);
-
-      // Output confirmation
-      if (this.outputConfirmation) {
-        this.outputSessionConfirmation(context, event);
+      // Use hydrator mode if available, otherwise legacy mode
+      if (this.hydrator) {
+        return await this.executeWithHydrator(event);
+      } else {
+        return await this.executeLegacy(event);
       }
-
-      return {
-        success: true,
-        data: {
-          sessionId: event.metadata.sessionId,
-          loadedLayers: ['USER', 'PREFERENCES', 'ACTIVE_PROJECTS'],
-          resuming: event.metadata.resuming ?? false,
-        },
-      };
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error));
 
-      // Log error but don't throw - session should continue even if context fails
+      // Log error but don't block session start - allow with error metadata
       if (this.outputConfirmation) {
         this.outputFn(`[SessionStart] Warning: Failed to load CORE context: ${err.message}`);
       }
 
+      // Use enforcement pattern - allow session to continue even on error
+      // Session start should never block, just log the error
       return {
+        ...this.allow({
+          contextLoaded: false,
+          error: err.message,
+        }),
+        // Maintain backward compatibility
         success: false,
         error: err.message,
       };
     }
+  }
+
+  /**
+   * Execute using PrepromptHydrator (Layer 1 hydration)
+   * @param event - Session start event
+   * @returns Hook result
+   */
+  private async executeWithHydrator(event: SessionStartEvent): Promise<HookResult> {
+    // Load Layer 1 via hydrator
+    await this.hydrator!.loadLayer1();
+
+    // Also load context for confirmation output
+    const context = await this.loadCoreContext();
+
+    // Output confirmation
+    if (this.outputConfirmation) {
+      this.outputSessionConfirmation(context, event);
+    }
+
+    // Use the enforcement pattern - allow session to proceed
+    return {
+      ...this.allow({
+        contextLoaded: true,
+        sessionId: event.metadata.sessionId,
+        layer1Loaded: true,
+      }),
+      // Maintain backward compatibility with data field
+      data: {
+        sessionId: event.metadata.sessionId,
+        loadedLayers: ['USER', 'PREFERENCES', 'ACTIVE_PROJECTS'],
+        resuming: event.metadata.resuming ?? false,
+        useHydrator: true,
+      },
+    };
+  }
+
+  /**
+   * Execute using legacy mode (direct CoreManager + PrepromptInjector)
+   * @param event - Session start event
+   * @returns Hook result
+   */
+  private async executeLegacy(event: SessionStartEvent): Promise<HookResult> {
+    // Load CORE context
+    const context = await this.loadCoreContext();
+
+    // Format and inject into preprompt
+    const formattedContext = this.formatContextForPreprompt(context);
+    this.prepromptInjector.injectContext(this.coreLayerName, formattedContext, this.corePriority);
+
+    // Output confirmation
+    if (this.outputConfirmation) {
+      this.outputSessionConfirmation(context, event);
+    }
+
+    // Use the enforcement pattern - allow session to proceed
+    return {
+      ...this.allow({
+        contextLoaded: true,
+        sessionId: event.metadata.sessionId,
+      }),
+      // Maintain backward compatibility with data field
+      data: {
+        sessionId: event.metadata.sessionId,
+        loadedLayers: ['USER', 'PREFERENCES', 'ACTIVE_PROJECTS'],
+        resuming: event.metadata.resuming ?? false,
+      },
+    };
   }
 
   /**
@@ -240,5 +313,21 @@ export class SessionStartHook extends BaseHookHandler {
    */
   isOutputConfirmationEnabled(): boolean {
     return this.outputConfirmation;
+  }
+
+  /**
+   * Get the PrepromptHydrator (if using hydrator mode)
+   * @returns PrepromptHydrator instance or null
+   */
+  getHydrator(): PrepromptHydrator | null {
+    return this.hydrator;
+  }
+
+  /**
+   * Check if using hydrator mode
+   * @returns true if hydrator is configured
+   */
+  isUsingHydrator(): boolean {
+    return this.hydrator !== null;
   }
 }

@@ -3,7 +3,25 @@
  *
  * Event types and interfaces for the hook system that captures events
  * from CAM (the orchestrator) and sub-agents.
+ *
+ * Supports enforcement actions: hooks can ALLOW, BLOCK, or MODIFY operations.
  */
+
+// ============================================================================
+// Hook Action Enum (Enforcement)
+// ============================================================================
+
+/**
+ * Actions that a hook can take to control execution flow
+ */
+export enum HookAction {
+  /** Allow the operation to proceed normally */
+  ALLOW = 'allow',
+  /** Block the operation (throw error) */
+  BLOCK = 'block',
+  /** Modify data before the operation proceeds */
+  MODIFY = 'modify',
+}
 
 // ============================================================================
 // Event Types Enum
@@ -23,6 +41,8 @@ export enum EventType {
   SESSION_SUMMARY = 'session_summary',
   /** Session start event - fires when a new session begins */
   SESSION_START = 'session_start',
+  /** Pre-tool-use event - fires before tool execution for validation */
+  PRE_TOOL_USE = 'pre_tool_use',
 }
 
 // ============================================================================
@@ -146,12 +166,73 @@ export interface SessionStartEvent extends HookEvent {
 
 /**
  * Result from executing a hook
+ *
+ * Supports both legacy (success/error) and enforcement (action) patterns.
+ * The enforcement pattern allows hooks to ALLOW, BLOCK, or MODIFY operations.
  */
 export interface HookResult {
-  /** Whether the hook executed successfully */
-  success: boolean;
-  /** Error message if failed */
+  /** Whether the hook executed successfully (legacy pattern) */
+  success?: boolean;
+  /** Error message if failed (legacy pattern) */
   error?: string;
   /** Any data returned by the hook */
   data?: Record<string, unknown>;
+  /** Enforcement action (new pattern) - defaults to ALLOW if not specified */
+  action?: HookAction;
+  /** Reason for BLOCK or MODIFY action */
+  reason?: string;
+  /** Additional metadata about the hook execution */
+  metadata?: Record<string, unknown>;
+}
+
+// ============================================================================
+// Pre-Tool-Use Event
+// ============================================================================
+
+/**
+ * Context information for pre-tool-use events
+ */
+export interface PreToolUseContext {
+  /** Name of active skill if any */
+  skillName?: string;
+  /** Current session ID */
+  sessionId?: string;
+  /** Current user ID */
+  userId?: string;
+  /** Working directory for the tool */
+  workingDirectory?: string;
+}
+
+/**
+ * Metadata specific to pre-tool-use events
+ */
+export interface PreToolUseMetadata extends EventMetadata {
+  /** Name of the tool being called */
+  toolName: string;
+  /** Arguments passed to the tool */
+  args: unknown[];
+  /** Additional context */
+  context?: PreToolUseContext;
+}
+
+/**
+ * Pre-tool-use event that fires before tool execution
+ */
+export interface PreToolUseEvent extends HookEvent {
+  /** Event type is always PRE_TOOL_USE */
+  type: EventType.PRE_TOOL_USE;
+  /** Tool-specific metadata */
+  metadata: PreToolUseMetadata;
+}
+
+/**
+ * Result of tool validation
+ */
+export interface ToolValidationResult {
+  /** Whether the tool is safe to execute */
+  safe: boolean;
+  /** Reason if unsafe */
+  reason?: string;
+  /** Matched dangerous pattern if any */
+  matchedPattern?: string;
 }

@@ -13,6 +13,7 @@ import {
   RelevanceScores,
   DEFAULT_RELEVANCE_SCORES,
 } from './types';
+import { ScoredContext } from './preprompt-hydrator-types';
 
 /**
  * Configuration for relevance scoring
@@ -244,5 +245,60 @@ export class RelevanceScorer {
    */
   getConfig(): Readonly<RelevanceScorerConfig> {
     return { ...this.config };
+  }
+
+  // =========================================================================
+  // Simple Context Scoring (for two-layer hydration)
+  // =========================================================================
+
+  /**
+   * Score a context string against a query using simple keyword matching
+   *
+   * This is a simpler scoring method for the two-layer hydration system,
+   * using TF-IDF style keyword matching.
+   *
+   * @param context - Context content to score
+   * @param query - Query to match against
+   * @returns Relevance score 0-1
+   */
+  scoreContext(context: string, query: string): number {
+    if (!context || !query) {
+      return 0;
+    }
+
+    // Use existing scoreQueryRelevance for keyword matching
+    return this.scoreQueryRelevance(context, query);
+  }
+
+  /**
+   * Rank multiple contexts by relevance to a query
+   *
+   * @param contexts - Array of context strings
+   * @param query - Query to match against
+   * @returns Array of ScoredContext sorted by score descending
+   */
+  rankContexts(contexts: string[], query: string): ScoredContext[] {
+    if (contexts.length === 0) {
+      return [];
+    }
+
+    const scored: ScoredContext[] = contexts.map((context) => ({
+      context,
+      score: this.scoreContext(context, query),
+    }));
+
+    // Sort by score descending
+    return scored.sort((a, b) => b.score - a.score);
+  }
+
+  /**
+   * Filter contexts by minimum score threshold
+   *
+   * @param contexts - Array of scored contexts
+   * @param minScore - Minimum score threshold (default: 0.3)
+   * @returns Filtered context strings above threshold
+   */
+  filterByScore(contexts: ScoredContext[], minScore: number = 0.3): string[] {
+    return contexts.filter((c) => c.score >= minScore).map((c) => c.context);
   }
 }

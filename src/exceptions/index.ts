@@ -67,6 +67,7 @@ export const ErrorCodes = {
   INVALID_EVENT: 'INVALID_EVENT',
   HANDLER_ERROR: 'HANDLER_ERROR',
   AGGREGATE_HANDLER_ERROR: 'AGGREGATE_HANDLER_ERROR',
+  HOOK_BLOCKED: 'HOOK_BLOCKED',
 } as const;
 
 export type ErrorCode = (typeof ErrorCodes)[keyof typeof ErrorCodes];
@@ -470,5 +471,40 @@ export class AggregateHandlerError extends InfiniteAuraError {
     });
     this.name = 'AggregateHandlerError';
     this.errors = errors;
+  }
+}
+
+/**
+ * Error thrown when a hook blocks an operation
+ *
+ * This is part of the enforcement system - hooks can ALLOW, BLOCK, or MODIFY operations.
+ * When a hook returns BLOCK action, this error is thrown to prevent the operation.
+ */
+export class HookBlockedError extends InfiniteAuraError {
+  public readonly hookType: string;
+  public readonly event: Record<string, unknown>;
+
+  constructor(
+    message: string,
+    hookType: string,
+    event: Record<string, unknown>,
+    details: ErrorDetails = {}
+  ) {
+    super(message, ErrorCodes.HOOK_BLOCKED, {
+      ...details,
+      hookType,
+      eventType: event.type,
+    });
+    this.name = 'HookBlockedError';
+    this.hookType = hookType;
+    this.event = event;
+  }
+
+  toJSON(): SerializedError & { hookType: string; eventType: unknown } {
+    return {
+      ...super.toJSON(),
+      hookType: this.hookType,
+      eventType: this.event.type,
+    };
   }
 }
