@@ -4,10 +4,14 @@
   "description": "Self-healing, self-improving memory system for AI agents",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "bin": {
+    "cam": "./dist/cli/main.js"
+  },
   "packageManager": "pnpm@9.0.0",
   "scripts": {
     "build": "tsc",
     "build:watch": "tsc --watch",
+    "build:cli": "tsc && chmod +x dist/cli/main.js",
     "test": "jest --passWithNoTests",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
@@ -18,7 +22,8 @@
     "typecheck": "tsc --noEmit",
     "check:all": "pnpm typecheck && pnpm lint && pnpm format:check && pnpm test",
     "audit": "pnpm audit --audit-level=moderate",
-    "precommit": "lint-staged"
+    "precommit": "lint-staged",
+    "dev": "ts-node src/cli/main.ts"
   },
   "devDependencies": {
     "@types/jest": "^29.5.11",
