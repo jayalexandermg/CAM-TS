@@ -360,9 +360,11 @@ describe('CLI Integration', () => {
       const startPromise = interactive.start();
       await new Promise((resolve) => setTimeout(resolve, 50));
 
-      // Command doesn't exist yet
+      // Command doesn't exist yet - goes through orchestrator as natural language
+      const beforeCount = outputMessages.length;
       await interactive.processInput('dynamic');
-      expect(outputMessages.some((msg) => msg.includes('Error'))).toBe(true);
+      // Should produce some output (from orchestrator processing)
+      expect(outputMessages.length).toBeGreaterThan(beforeCount);
 
       // Register the command dynamically
       router.register('dynamic', {
@@ -371,7 +373,7 @@ describe('CLI Integration', () => {
         getDescription: () => 'Dynamic',
       });
 
-      // Now it should work
+      // Now it should be handled by the router
       await interactive.processInput('dynamic');
       expect(outputMessages.some((msg) => msg.includes('Dynamic command works!'))).toBe(true);
 

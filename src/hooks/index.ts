@@ -29,5 +29,12 @@ export * from './SessionStartHook';
 // Pre-tool-use hook
 export * from './PreToolUseHook';
 
+// Post-tool-use hook
+export * from './PostToolUseHook';
+
 // Tool usage logger
 export * from './ToolUsageLogger';
+
+// Stop hooks (UOCS-integrated)
+export * from './StopHook';
+export * from './SubagentStopHook';

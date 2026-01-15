@@ -43,6 +43,8 @@ export enum EventType {
   SESSION_START = 'session_start',
   /** Pre-tool-use event - fires before tool execution for validation */
   PRE_TOOL_USE = 'pre_tool_use',
+  /** Post-tool-use event - fires after tool execution for capturing outputs */
+  POST_TOOL_USE = 'post_tool_use',
 }
 
 // ============================================================================
@@ -235,4 +237,54 @@ export interface ToolValidationResult {
   reason?: string;
   /** Matched dangerous pattern if any */
   matchedPattern?: string;
+}
+
+// ============================================================================
+// Post-Tool-Use Event
+// ============================================================================
+
+/**
+ * Context information for post-tool-use events
+ */
+export interface PostToolUseContext {
+  /** Name of active skill if any */
+  skillName?: string;
+  /** Current session ID */
+  sessionId?: string;
+  /** Current user ID */
+  userId?: string;
+  /** Agent ID that executed the tool */
+  agentId?: string;
+  /** Working directory for the tool */
+  workingDirectory?: string;
+}
+
+/**
+ * Metadata specific to post-tool-use events
+ */
+export interface PostToolUseMetadata extends EventMetadata {
+  /** Name of the tool that was called */
+  toolName: string;
+  /** Arguments passed to the tool */
+  toolInput: unknown;
+  /** Output returned by the tool */
+  toolOutput: unknown;
+  /** Duration of tool execution in milliseconds */
+  duration: number;
+  /** Whether the tool executed successfully */
+  success: boolean;
+  /** Error if tool execution failed */
+  error?: Error;
+  /** Additional context */
+  context?: PostToolUseContext;
+}
+
+/**
+ * Post-tool-use event that fires after tool execution
+ */
+export interface PostToolUseEvent extends HookEvent {
+  /** Event type is always POST_TOOL_USE */
+  type: EventType.POST_TOOL_USE;
+  /** Tool execution metadata */
+  metadata: PostToolUseMetadata;
 }

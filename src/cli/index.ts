@@ -9,6 +9,7 @@ export * from './errors';
 export * from './CommandParser';
 export * from './CommandRouter';
 export * from './InteractiveMode';
+export * from './OrchestratorBridge';
 export * from './session/Session';
 export * from './session/SessionManager';
 export * from './commands/HelpCommand';

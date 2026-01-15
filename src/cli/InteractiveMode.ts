@@ -4,6 +4,7 @@
  * REPL interface for interactive CLI sessions.
  * Provides a command-line interface for executing commands,
  * managing sessions, and integrating with personas and hooks.
+ * Full UOCS integration for session tracking and history.
  */
 
 import * as readline from 'readline';
@@ -17,6 +18,10 @@ import { SessionStartHook } from '../hooks/SessionStartHook';
 import { EventType, SessionStartEvent } from '../hooks/types';
 import { CoreManager } from '../memory/core';
 import { PrepromptInjector } from '../context/PrepromptInjector';
+import { OrchestratorBridge } from './OrchestratorBridge';
+import { CommandNotFoundError } from './errors';
+import { UOCS } from '../history/UOCS';
+import { SessionTranscript, Learning, Decision } from '../history/types';
 
 /**
  * Options for InteractiveMode
@@ -39,10 +44,10 @@ export interface InteractiveModeOptions {
  *
  * Provides:
  * - Command parsing and routing
- * - Session management
- * - Persona loading
+ * - Session management with full UOCS integration
+ * - Persona loading and switching with context
  * - SessionStart hook integration
- * - Command history
+ * - Command history with transcripts, learnings, and decisions
  */
 export class InteractiveMode {
   private readonly router: CommandRouter;
@@ -50,11 +55,13 @@ export class InteractiveMode {
   private readonly personaManager: PersonaManager;
   private readonly hookEmitter: HookEventEmitter;
   private readonly options: Required<InteractiveModeOptions>;
+  private readonly bridge: OrchestratorBridge;
 
   private session?: Session;
   private rl?: readline.Interface;
   private isRunning: boolean = false;
   private sessionStartHook?: SessionStartHook;
+  private uocsSessionStarted: boolean = false;
 
   /**
    * Create a new InteractiveMode instance
@@ -69,7 +76,8 @@ export class InteractiveMode {
     sessionManager: SessionManager,
     personaManager: PersonaManager,
     hookEmitter: HookEventEmitter,
-    options: InteractiveModeOptions = {}
+    options: InteractiveModeOptions = {},
+    bridge?: OrchestratorBridge
   ) {
     this.router = router;
     this.sessionManager = sessionManager;
@@ -83,11 +91,13 @@ export class InteractiveMode {
       showWelcome: options.showWelcome ?? true,
       outputFn: options.outputFn ?? console.log,
     };
+
+    this.bridge = bridge || new OrchestratorBridge();
   }
 
   /**
    * Start the interactive mode
-   * Creates a new session and begins the REPL loop
+   * Creates a new session, starts UOCS tracking, and begins the REPL loop
    */
   async start(): Promise<void> {
     if (this.isRunning) {
@@ -105,6 +115,9 @@ export class InteractiveMode {
     } catch {
       // Personas may not exist yet, that's ok
     }
+
+    // Initialize and start UOCS session via orchestrator
+    await this.startUOCSSession();
 
     // Trigger SessionStart hook
     await this.triggerSessionStart();
@@ -133,6 +146,27 @@ export class InteractiveMode {
     this.rl.on('close', async () => {
       await this.exit();
     });
+  }
+
+  /**
+   * Start UOCS session tracking via the orchestrator
+   */
+  private async startUOCSSession(): Promise<void> {
+    if (!this.session) {
+      return;
+    }
+
+    try {
+      const orchestrator = this.bridge.getOrchestrator();
+      await orchestrator.initialize();
+      await orchestrator.startSession(this.session.getId());
+      this.uocsSessionStarted = true;
+    } catch (error) {
+      // Log but don't fail - UOCS tracking is supplementary
+      this.options.outputFn(
+        `[Warning] Failed to start UOCS session: ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
   }
 
   /**
@@ -169,7 +203,11 @@ export class InteractiveMode {
    */
   private displayWelcome(): void {
     this.options.outputFn('CAM - Context-Aware Memory System');
-    this.options.outputFn('Type "help" for available commands, "exit" to quit\n');
+    this.options.outputFn('Type "help" for commands, "personas" to list personas, "exit" to quit');
+    if (this.uocsSessionStarted) {
+      this.options.outputFn(`Session tracking: active (ID: ${this.session?.getId()})`);
+    }
+    this.options.outputFn('');
   }
 
   /**
@@ -202,6 +240,18 @@ export class InteractiveMode {
       return;
     }
 
+    // Handle persona switching
+    if (input.startsWith('persona ')) {
+      await this.handlePersonaSwitch(input.substring(8).trim());
+      return;
+    }
+
+    // Handle persona list
+    if (input === 'personas') {
+      this.displayPersonas();
+      return;
+    }
+
     try {
       // Parse and route command
       const args = this.parseInputToArgs(input);
@@ -221,10 +271,23 @@ export class InteractiveMode {
       // Add to session history
       this.session?.addTurn(input, result.output || result.error || '');
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      this.options.outputFn(`Error: ${message}`);
-      // Still add to history even on error
-      this.session?.addTurn(input, `Error: ${message}`);
+      // If command not found, process through orchestrator as natural language
+      if (error instanceof CommandNotFoundError && this.session) {
+        try {
+          const response = await this.bridge.processInput(input, this.session);
+          this.options.outputFn(`\n${response}\n`);
+        } catch (bridgeError) {
+          const bridgeMessage =
+            bridgeError instanceof Error ? bridgeError.message : String(bridgeError);
+          this.options.outputFn(`Error: ${bridgeMessage}`);
+          this.session?.addTurn(input, `Error: ${bridgeMessage}`);
+        }
+      } else {
+        const message = error instanceof Error ? error.message : String(error);
+        this.options.outputFn(`Error: ${message}`);
+        // Still add to history even on error
+        this.session?.addTurn(input, `Error: ${message}`);
+      }
     }
   }
 
@@ -267,7 +330,7 @@ export class InteractiveMode {
   }
 
   /**
-   * Display command history
+   * Display command history from session
    */
   private displayHistory(): void {
     const history = this.session?.getHistory() || [];
@@ -290,7 +353,183 @@ export class InteractiveMode {
   }
 
   /**
+   * Handle persona switching with context preservation
+   * @param personaName - Name of the persona to switch to
+   */
+  private async handlePersonaSwitch(personaName: string): Promise<void> {
+    if (!personaName) {
+      const current = this.personaManager.getCurrentPersona();
+      if (current) {
+        this.options.outputFn(`Current persona: ${current.getName()}`);
+      } else {
+        this.options.outputFn('No persona currently selected');
+      }
+      return;
+    }
+
+    try {
+      await this.personaManager.switchPersona(personaName);
+      this.session?.setPersona(personaName);
+
+      // Capture persona switch in UOCS
+      if (this.uocsSessionStarted && this.session) {
+        const uocs = this.bridge.getOrchestrator().getUOCS();
+        uocs.captureTurn(this.session.getId(), {
+          role: 'system',
+          content: `Switched to persona: ${personaName}`,
+          timestamp: new Date(),
+        });
+      }
+
+      const persona = this.personaManager.getCurrentPersona();
+      this.options.outputFn(`\nSwitched to persona: ${personaName}`);
+      if (persona) {
+        this.options.outputFn(`Description: ${persona.getDescription()}`);
+        this.options.outputFn(`Style: ${persona.getDefinition().communicationStyle}`);
+      }
+      this.options.outputFn('');
+    } catch (error) {
+      this.options.outputFn(
+        `Failed to switch persona: ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
+  }
+
+  /**
+   * Display available personas
+   */
+  private displayPersonas(): void {
+    const personas = this.personaManager.listPersonas();
+    const current = this.personaManager.getCurrentPersona();
+
+    if (personas.length === 0) {
+      this.options.outputFn('No personas available');
+      return;
+    }
+
+    this.options.outputFn('\nAvailable Personas:');
+    for (const name of personas) {
+      const marker = current?.getName() === name ? ' (active)' : '';
+      const persona = this.personaManager.getPersona(name);
+      this.options.outputFn(`  ${name}${marker}`);
+      if (persona) {
+        this.options.outputFn(`    ${persona.getDescription()}`);
+      }
+    }
+    this.options.outputFn('\nUse "persona <name>" to switch');
+    this.options.outputFn('');
+  }
+
+  /**
+   * Get session history from UOCS
+   * @returns Session transcript if available
+   */
+  async getUOCSHistory(): Promise<SessionTranscript | null> {
+    if (!this.session || !this.uocsSessionStarted) {
+      return null;
+    }
+
+    try {
+      const uocs = this.bridge.getOrchestrator().getUOCS();
+      return await uocs.getSessionTranscript(this.session.getId());
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Get learnings from UOCS for a topic
+   * @param topic - Topic to search for
+   * @returns Array of learnings matching the topic
+   */
+  async searchLearnings(topic: string): Promise<Learning[]> {
+    if (!this.uocsSessionStarted) {
+      return [];
+    }
+
+    try {
+      const uocs = this.bridge.getOrchestrator().getUOCS();
+      return await uocs.searchLearnings(topic);
+    } catch {
+      return [];
+    }
+  }
+
+  /**
+   * Capture a decision in UOCS
+   * @param question - The question being decided
+   * @param decision - The decision made
+   * @param reasoning - The reasoning behind the decision
+   * @param alternatives - Alternative options considered
+   * @returns The captured decision or null on failure
+   */
+  async captureDecision(
+    question: string,
+    decision: string,
+    reasoning: string,
+    alternatives?: string[]
+  ): Promise<Decision | null> {
+    if (!this.session || !this.uocsSessionStarted) {
+      return null;
+    }
+
+    try {
+      const uocs = this.bridge.getOrchestrator().getUOCS();
+      return await uocs.captureDecision(
+        this.session.getId(),
+        question,
+        decision,
+        reasoning,
+        alternatives
+      );
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Capture a learning in UOCS
+   * @param topic - The topic of the learning
+   * @param insight - The insight gained
+   * @param confidence - Confidence level (0-1)
+   * @param source - Source of the learning
+   * @returns The captured learning or null on failure
+   */
+  async captureLearning(
+    topic: string,
+    insight: string,
+    confidence?: number,
+    source?: string
+  ): Promise<Learning | null> {
+    if (!this.session || !this.uocsSessionStarted) {
+      return null;
+    }
+
+    try {
+      const uocs = this.bridge.getOrchestrator().getUOCS();
+      return await uocs.captureLearning(
+        this.session.getId(),
+        topic,
+        insight,
+        confidence,
+        source
+      );
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Check if UOCS session is active
+   * @returns true if UOCS session is started
+   */
+  isUOCSSessionActive(): boolean {
+    return this.uocsSessionStarted;
+  }
+
+  /**
    * Exit interactive mode and save session
+   * Properly ends UOCS session via StopHook
    */
   async exit(): Promise<void> {
     if (!this.isRunning) {
@@ -299,6 +538,25 @@ export class InteractiveMode {
 
     this.isRunning = false;
     this.options.outputFn('\nSaving session...');
+
+    // End UOCS session via StopHook if active
+    if (this.uocsSessionStarted && this.session) {
+      try {
+        const orchestrator = this.bridge.getOrchestrator();
+        const stopHook = orchestrator.getStopHook();
+        await stopHook.execute({
+          sessionId: this.session.getId(),
+          agentId: undefined,
+          reason: 'complete',
+          finalOutput: `Session ended with ${this.session.getTurnCount()} turns`,
+        });
+        this.uocsSessionStarted = false;
+      } catch (error) {
+        this.options.outputFn(
+          `[Warning] Failed to end UOCS session: ${error instanceof Error ? error.message : String(error)}`
+        );
+      }
+    }
 
     // End session
     this.session?.end();
@@ -311,6 +569,13 @@ export class InteractiveMode {
       this.options.outputFn(
         `Failed to save session: ${error instanceof Error ? error.message : String(error)}`
       );
+    }
+
+    // Shutdown orchestrator bridge
+    try {
+      await this.bridge.shutdown();
+    } catch {
+      // Ignore shutdown errors
     }
 
     this.options.outputFn('Goodbye!');
@@ -371,6 +636,14 @@ export class InteractiveMode {
    */
   getHookEmitter(): HookEventEmitter {
     return this.hookEmitter;
+  }
+
+  /**
+   * Get the orchestrator bridge
+   * @returns Orchestrator bridge
+   */
+  getBridge(): OrchestratorBridge {
+    return this.bridge;
   }
 
   /**
