@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SwarmCode | Multi-Agent Code Intelligence</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+        
+        * {
+            font-family: 'Space Grotesk', sans-serif;
+        }
+        
+        code, .mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        :root {
+            --lime: #c8ff00;
+            --lime-dim: #a3d000;
+            --ember: #ff6b35;
+            --surface-1: #0a0a0a;
+            --surface-2: #111111;
+            --surface-3: #1a1a1a;
+            --surface-4: #222222;
+        }
+
+        body {
+            background: var(--surface-1);
+            overflow-x: hidden;
+        }
+
+        .text-lime {
+            color: var(--lime);
+        }
+
+        .bg-lime {
+            background: var(--lime);
+        }
+
+        .text-ember {
+            color: var(--ember);
+        }
+
+        /* Floating Card Effect */
+        .float-card {
+            background: linear-gradient(145deg, rgba(30,30,30,0.9) 0%, rgba(20,20,20,0.95) 100%);
+            border: 1px solid rgba(255,255,255,0.06);
+            box-shadow: 
+                0 4px 6px rgba(0,0,0,0.4),
+                0 10px 20px rgba(0,0,0,0.3),
+                0 30px 60px rgba(0,0,0,0.4),
+                inset 0 1px 0 rgba(255,255,255,0.05);
+            transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+
+        .float-card:hover {
+            transform: translateY(-12px) scale(1.02);
+            box-shadow: 
+                0 8px 12px rgba(0,0,0,0.4),
+                0 20px 40px rgba(0,0,0,0.3),
+                0 50px 80px rgba(0,0,0,0.4),
+                0 0 60px rgba(200,255,0,0.08),
+                inset 0 1px 0 rgba(255,255,255,0.1);
+            border-color: rgba(200,255,0,0.2);
+        }
+
+        /* Glass Effect */
+        .glass {
+            background: rgba(255,255,255,0.03);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.06);
+        }
+
+        /* Glow Button */
+        .glow-btn {
+            background: var(--lime);
+            color: #000;
+            box-shadow: 
+                0 0 20px rgba(200,255,0,0.3),
+                0 0 40px rgba(200,255,0,0.2),
+                0 0 60px rgba(200,255,0,0.1);
+            transition: all 0.3s ease;
+        }
+
+        .glow-btn:hover {
+            box-shadow: 
+                0 0 30px rgba(200,255,0,0.5),
+                0 0 60px rgba(200,255,0,0.3),
+                0 0 90px rgba(200,255,0,0.2);
+            transform: translateY(-2px);
+        }
+
+        /* Hover Float Animation */
+        @keyframes hover-float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .animate-float {
+            animation: hover-float 4s ease-in-out infinite;
+        }
+
+        .animate-float-delayed {
+            animation: hover-float 4s ease-in-out 1s infinite;
+        }
+
+        .animate-float-delayed-2 {
+            animation: hover-float 4s ease-in-out 2s infinite;
+        }
+
+        /* Grid Background */
+        .grid-bg {
+            background-image: 
+                linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+            background-size: 60px 60px;
+        }
+
+        /* Agent Badge */
+        .agent-badge {
+            position: relative;
+        }
+
+        .agent-badge::before {
+            content: '';
+            position: absolute;
+            inset: -2px;
+            background: linear-gradient(135deg, var(--lime), var(--ember));
+            border-radius: inherit;
+            z-index: -1;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+
+        .agent-badge:hover::before {
+            opacity: 1;
+        }
+
+        /* Scroll Reveal */
+        .reveal {
+            opacity: 0;
+            transform: translateY(40px);
+            transition: all 0.8s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Depth Layers */
+        .depth-1 { transform: translateZ(10px); }
+        .depth-2 { transform: translateZ(20px); }
+        .depth-3 { transform: translateZ(30px); }
+
+        /* Spotlight effect */
+        .spotlight {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .spotlight::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(200,255,0,0.03) 0%, transparent 50%);
+            opacity: 0;
+            transition: opacity 0.5s ease;
+            pointer-events: none;
+        }
+
+        .spotlight:hover::after {
+            opacity: 1;
+        }
+
+        /* Morphing blob */
+        @keyframes morph {
+            0%, 100% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; }
+            50% { border-radius: 30% 60% 70% 40% / 50% 60% 30% 60%; }
+        }
+
+        .blob {
+            animation: morph 8s ease-in-out infinite;
+        }
+
+        /* Line decoration */
+        .line-accent {
+            position: relative;
+        }
+
+        .line-accent::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            width: 40px;
+            height: 2px;
+            background: var(--lime);
+            transform: translateX(-60px);
+        }
+
+        /* Number counter */
+        .counter-box {
+            position: relative;
+        }
+
+        .counter-box::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60%;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--lime), transparent);
+        }
+
+        /* Terminal styling */
+        .terminal {
+            background: linear-gradient(180deg, #0d0d0d 0%, #080808 100%);
+            box-shadow: 
+                0 25px 50px rgba(0,0,0,0.5),
+                0 0 0 1px rgba(255,255,255,0.05),
+                inset 0 1px 0 rgba(255,255,255,0.05);
+        }
+
+        /* Typing animation */
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+
+        .cursor {
+            animation: blink 1s infinite;
+        }
+
+        /* Orbit animation */
+        @keyframes orbit-1 {
+            from { transform: rotate(0deg) translateX(120px) rotate(0deg); }
+            to { transform: rotate(360deg) translateX(120px) rotate(-360deg); }
+        }
+
+        @keyframes orbit-2 {
+            from { transform: rotate(90deg) translateX(120px) rotate(-90deg); }
+            to { transform: rotate(450deg) translateX(120px) rotate(-450deg); }
+        }
+
+        @keyframes orbit-3 {
+            from { transform: rotate(180deg) translateX(120px) rotate(-180deg); }
+            to { transform: rotate(540deg) translateX(120px) rotate(-540deg); }
+        }
+
+        @keyframes orbit-4 {
+            from { transform: rotate(270deg) translateX(120px) rotate(-270deg); }
+            to { transform: rotate(630deg) translateX(120px) rotate(-630deg); }
+        }
+
+        .orbit-1 { animation: orbit-1 12s linear infinite; }
+        .orbit-2 { animation: orbit-2 12s linear infinite; }
+        .orbit-3 { animation: orbit-3 12s linear infinite; }
+        .orbit-4 { animation: orbit-4 12s linear infinite; }
+
+        /* Pulse ring */
+        @keyframes pulse-out {
+            0% { transform: scale(0.5); opacity: 0.8; }
+            100% { transform: scale(2); opacity: 0; }
+        }
+
+        .pulse-ring {
+            animation: pulse-out 3s ease-out infinite;
+        }
+
+        /* Shimmer effect */
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+
+        .shimmer {
+            background: linear-gradient(90deg, transparent, rgba(200,255,0,0.1), transparent);
+            background-size: 200% 100%;
+            animation: shimmer 3s infinite;
+        }
+    </style>
+</head>
+<body class="text-white">
+    <!-- Ambient Background -->
+    <div class="fixed inset-0 pointer-events-none">
+        <div class="absolute top-0 right-0 w-[600px] h-[600px] bg-[#c8ff00]/[0.03] rounded-full blur-[150px] blob"></div>
+        <div class="absolute bottom-0 left-0 w-[500px] h-[500px] bg-[#ff6b35]/[0.03] rounded-full blur-[120px] blob" style="animation-delay: -4s;"></div>
+        <div class="grid-bg absolute inset-0 opacity-50"></div>
+    </div>
+
+    <!-- Floating Preview Switcher -->
+    <div class="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] glass rounded-2xl p-2 flex items-center gap-2">
+        <span class="text-xs text-white/40 px-3">View:</span>
+        <a href="index.html" class="px-4 py-2 rounded-xl bg-lime text-black text-sm font-semibold">Landing</a>
+        <a href="app.html" class="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-sm font-semibold transition">Dashboard</a>
+        <a href="repositories.html" class="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-sm font-semibold transition">Repos</a>
+        <a href="swarms.html" class="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-sm font-semibold transition">Swarms</a>
+        <a href="pull-requests.html" class="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-sm font-semibold transition">PRs</a>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="fixed top-0 left-0 right-0 z-50">
+        <div class="max-w-7xl mx-auto px-6 py-4">
+            <div class="glass rounded-2xl px-6 py-3 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-lime rounded-xl flex items-center justify-center">
+                        <i class="fas fa-hexagon-nodes text-black text-lg"></i>
+                    </div>
+                    <span class="text-xl font-bold tracking-tight">swarm<span class="text-lime">code</span></span>
+                </div>
+                <div class="hidden md:flex items-center gap-10">
+                    <a href="#agents" class="text-white/60 hover:text-lime transition-colors text-sm font-medium">Agents</a>
+                    <a href="#process" class="text-white/60 hover:text-lime transition-colors text-sm font-medium">Process</a>
+                    <a href="#features" class="text-white/60 hover:text-lime transition-colors text-sm font-medium">Features</a>
+                    <a href="#pricing" class="text-white/60 hover:text-lime transition-colors text-sm font-medium">Pricing</a>
+                </div>
+                <div class="flex items-center gap-3">
+                    <a href="app.html" class="text-white/60 hover:text-white transition px-4 py-2 text-sm font-medium">Sign In</a>
+                    <a href="app.html" class="glow-btn px-5 py-2.5 rounded-xl font-semibold text-sm">
+                        Launch App
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="relative min-h-screen flex items-center pt-32 pb-20">
+        <div class="max-w-7xl mx-auto px-6 w-full">
+            <div class="grid lg:grid-cols-2 gap-16 items-center">
+                <div class="reveal">
+                    <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 mb-8">
+                        <div class="w-2 h-2 bg-lime rounded-full animate-pulse"></div>
+                        <span class="text-sm text-white/60 font-medium">Multi-Agent AI Framework</span>
+                    </div>
+                    
+                    <h1 class="text-5xl md:text-6xl lg:text-7xl font-bold leading-[1.1] mb-6 tracking-tight">
+                        Your vibe code,<br>
+                        <span class="text-lime">production</span><br>
+                        ready.
+                    </h1>
+                    
+                    <p class="text-lg text-white/50 max-w-xl mb-10 leading-relaxed">
+                        Deploy autonomous agent swarms that scan, test, fix, and refactor your codebase. Transform chaos into clean, secure, scalable architecture.
+                    </p>
+                    
+                    <div class="flex flex-col sm:flex-row gap-4">
+                        <button class="glow-btn px-8 py-4 rounded-2xl font-semibold text-base flex items-center justify-center gap-3">
+                            <span>Deploy Swarm</span>
+                            <i class="fas fa-arrow-right"></i>
+                        </button>
+                        <button class="px-8 py-4 rounded-2xl font-semibold text-base flex items-center justify-center gap-3 bg-white/5 border border-white/10 hover:bg-white/10 transition">
+                            <i class="fas fa-play text-lime"></i>
+                            <span>Watch Demo</span>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Agent Swarm Visualization -->
+                <div class="relative h-[500px] flex items-center justify-center reveal" style="transition-delay: 0.2s;">
+                    <!-- Center Core -->
+                    <div class="absolute w-32 h-32 animate-float">
+                        <div class="w-full h-full rounded-3xl bg-gradient-to-br from-[#1a1a1a] to-[#0d0d0d] border border-white/10 flex items-center justify-center shadow-2xl">
+                            <i class="fas fa-code text-4xl text-lime"></i>
+                        </div>
+                        <div class="absolute inset-0 rounded-3xl border border-lime/30 pulse-ring"></div>
+                        <div class="absolute inset-0 rounded-3xl border border-lime/20 pulse-ring" style="animation-delay: 1s;"></div>
+                    </div>
+                    
+                    <!-- Orbiting Agents -->
+                    <div class="absolute orbit-1">
+                        <div class="w-16 h-16 float-card rounded-2xl flex items-center justify-center">
+                            <i class="fas fa-radar text-xl text-lime"></i>
+                        </div>
+                    </div>
+                    <div class="absolute orbit-2">
+                        <div class="w-16 h-16 float-card rounded-2xl flex items-center justify-center">
+                            <i class="fas fa-vial text-xl text-emerald-400"></i>
+                        </div>
+                    </div>
+                    <div class="absolute orbit-3">
+                        <div class="w-16 h-16 float-card rounded-2xl flex items-center justify-center">
+                            <i class="fas fa-wrench text-xl text-amber-400"></i>
+                        </div>
+                    </div>
+                    <div class="absolute orbit-4">
+                        <div class="w-16 h-16 float-card rounded-2xl flex items-center justify-center">
+                            <i class="fas fa-layer-group text-xl text-rose-400"></i>
+                        </div>
+                    </div>
+                    
+                    <!-- Orbit Ring -->
+                    <div class="absolute w-[240px] h-[240px] rounded-full border border-white/5"></div>
+                    <div class="absolute w-[300px] h-[300px] rounded-full border border-dashed border-white/5"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stats Section -->
+    <section class="relative py-20">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="float-card rounded-3xl p-10 reveal">
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-8">
+                    <div class="text-center counter-box pb-4">
+                        <div class="text-4xl md:text-5xl font-bold text-lime mb-2">98%</div>
+                        <div class="text-white/40 text-sm font-medium uppercase tracking-wider">Bugs Found</div>
+                    </div>
+                    <div class="text-center counter-box pb-4">
+                        <div class="text-4xl md:text-5xl font-bold text-lime mb-2">10x</div>
+                        <div class="text-white/40 text-sm font-medium uppercase tracking-wider">Faster</div>
+                    </div>
+                    <div class="text-center counter-box pb-4">
+                        <div class="text-4xl md:text-5xl font-bold text-lime mb-2">500k</div>
+                        <div class="text-white/40 text-sm font-medium uppercase tracking-wider">Files Fixed</div>
+                    </div>
+                    <div class="text-center counter-box pb-4">
+                        <div class="text-4xl md:text-5xl font-bold text-lime mb-2">24/7</div>
+                        <div class="text-white/40 text-sm font-medium uppercase tracking-wider">Autonomous</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Agent Swarms Section -->
+    <section id="agents" class="relative py-24">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="text-center mb-20 reveal">
+                <span class="text-lime text-sm font-semibold uppercase tracking-widest mb-4 block">The Swarms</span>
+                <h2 class="text-4xl md:text-5xl font-bold mb-6">Four autonomous agents.<br><span class="text-white/40">One perfect codebase.</span></h2>
+            </div>
+            
+            <div class="grid md:grid-cols-2 gap-6">
+                <!-- Scanner Agent -->
+                <div class="float-card spotlight rounded-3xl p-8 reveal group">
+                    <div class="flex items-start gap-6">
+                        <div class="w-16 h-16 rounded-2xl bg-lime/10 border border-lime/20 flex items-center justify-center flex-shrink-0 group-hover:bg-lime/20 transition">
+                            <i class="fas fa-radar text-2xl text-lime"></i>
+                        </div>
+                        <div class="flex-1">
+                            <div class="flex items-center gap-3 mb-3">
+                                <h3 class="text-2xl font-bold">Scanner</h3>
+                                <span class="px-2 py-1 rounded-md bg-lime/10 text-lime text-xs font-semibold">SWARM 01</span>
+                            </div>
+                            <p class="text-white/50 mb-6 leading-relaxed">Deep code analysis detecting vulnerabilities, security holes, and architectural anti-patterns before they become disasters.</p>
+                            <div class="flex flex-wrap gap-2">
+                                <span class="px-3 py-1.5 bg-white/5 rounded-lg text-white/60 text-sm">Security Audit</span>
+                                <span class="px-3 py-1.5 bg-white/5 rounded-lg text-white/60 text-sm">CVE Detection</span>
+                                <span class="px-3 py-1.5 bg-white/5 rounded-lg text-white/60 text-sm">Code Smells</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Tester Agent -->
+                <div class="float-card spotlight rounded-3xl p-8 reveal group" style="transition-delay: 0.1s;">
+                    <div class="flex items-start gap-6">
+                        <div class="w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center flex-shrink-0 group-hover:bg-emerald-500/20 transition">
+                            <i class="fas fa-vial text-2xl text-emerald-400"></i>
+                        </div>
+                        <div class="flex-1">
+                            <div class="flex items-center gap-3 mb-3">
+                                <h3 class="text-2xl font-bold">Tester</h3>
+                                <span class="px-2 py-1 rounded-md bg-emerald-500/10 text-emerald-400 text-xs font-semibold">SWARM 02</span>
+                            </div>
+                            <p class="text-white/50 mb-6 leading-relaxed">Autonomous test generation covering edge cases, integration scenarios, and stress conditions you never thought of.</p>
+                            <div class="flex flex-wrap gap-2">
+                                <span class="px-3 py-1.5 bg-white/5 rounded-lg text-white/60 text-sm">Unit Tests</span>
+                                <span class="px-3 py-1.5 bg-white/5 rounded-lg text-white/60 text-sm">Edge Cases</span>
+                                <span class="px-3 py-1.5 bg-white/5 rounded-lg text-white/60 text-sm">95% Coverage</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Fixer Agent -->
+                <div class="float-card spotlight rounded-3xl p-8 reveal group" style="transition-delay: 0.2s;">
+                    <div class="flex items-start gap-6">
+                        <div class="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center flex-shrink-0 group-hover:bg-amber-500/20 transition">
+                            <i class="fas fa-wrench text-2xl text-amber-400"></i>
+                        </div>
+                        <div class="flex-1">
+                            <div class="flex items-center gap-3 mb-3">
+                                <h3 class="text-2xl font-bold">Fixer</h3>
+                                <span class="px-2 py-1 rounded-md bg-amber-500/10 text-amber-400 text-xs font-semibold">SWARM 03</span>
+                            </div>
+                            <p class="text-white/50 mb-6 leading-relaxed">Surgical bug fixes with context-aware patching. Every change is production-safe with automatic rollback capability.</p>
+                            <div class="flex flex-wrap gap-2">
+                                <span class="px-3 py-1.5 bg-white/5 rounded-lg text-white/60 text-sm">Auto Patch</span>
+                                <span class="px-3 py-1.5 bg-white/5 rounded-lg text-white/60 text-sm">Safe Deploys</span>
+                                <span class="px-3 py-1.5 bg-white/5 rounded-lg text-white/60 text-sm">Rollback</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Refactor Agent -->
+                <div class="float-card spotlight rounded-3xl p-8 reveal group" style="transition-delay: 0.3s;">
+                    <div class="flex items-start gap-6">
+                        <div class="w-16 h-16 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center flex-shrink-0 group-hover:bg-rose-500/20 transition">
+                            <i class="fas fa-layer-group text-2xl text-rose-400"></i>
+                        </div>
+                        <div class="flex-1">
+                            <div class="flex items-center gap-3 mb-3">
+                                <h3 class="text-2xl font-bold">Refactor</h3>
+                                <span class="px-2 py-1 rounded-md bg-rose-500/10 text-rose-400 text-xs font-semibold">SWARM 04</span>
+                            </div>
+                            <p class="text-white/50 mb-6 leading-relaxed">Architecture transformation for scale. Clean patterns, modular structure, and performance optimization built in.</p>
+                            <div class="flex flex-wrap gap-2">
+                                <span class="px-3 py-1.5 bg-white/5 rounded-lg text-white/60 text-sm">Clean Code</span>
+                                <span class="px-3 py-1.5 bg-white/5 rounded-lg text-white/60 text-sm">Modular</span>
+                                <span class="px-3 py-1.5 bg-white/5 rounded-lg text-white/60 text-sm">Scalable</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Process Section -->
+    <section id="process" class="relative py-24">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="grid lg:grid-cols-2 gap-20 items-center">
+                <div class="reveal">
+                    <span class="text-lime text-sm font-semibold uppercase tracking-widest mb-4 block">How It Works</span>
+                    <h2 class="text-4xl md:text-5xl font-bold mb-8">Chaos to clarity<br>in <span class="text-lime">four steps</span>.</h2>
+                    
+                    <div class="space-y-8">
+                        <div class="flex gap-6 group">
+                            <div class="w-12 h-12 rounded-2xl bg-lime text-black flex items-center justify-center font-bold text-lg flex-shrink-0">1</div>
+                            <div>
+                                <h4 class="text-xl font-semibold mb-2 group-hover:text-lime transition">Connect Repository</h4>
+                                <p class="text-white/50">Link your GitHub, GitLab, or Bitbucket repo with a single click.</p>
+                            </div>
+                        </div>
+                        
+                        <div class="flex gap-6 group">
+                            <div class="w-12 h-12 rounded-2xl bg-white/10 border border-white/10 flex items-center justify-center font-bold text-lg flex-shrink-0 group-hover:bg-lime group-hover:text-black group-hover:border-lime transition">2</div>
+                            <div>
+                                <h4 class="text-xl font-semibold mb-2 group-hover:text-lime transition">Deploy Swarms</h4>
+                                <p class="text-white/50">Agents begin autonomous analysis and understanding of your codebase.</p>
+                            </div>
+                        </div>
+                        
+                        <div class="flex gap-6 group">
+                            <div class="w-12 h-12 rounded-2xl bg-white/10 border border-white/10 flex items-center justify-center font-bold text-lg flex-shrink-0 group-hover:bg-lime group-hover:text-black group-hover:border-lime transition">3</div>
+                            <div>
+                                <h4 class="text-xl font-semibold mb-2 group-hover:text-lime transition">Review & Approve</h4>
+                                <p class="text-white/50">Get detailed reports and approve changes with full context.</p>
+                            </div>
+                        </div>
+                        
+                        <div class="flex gap-6 group">
+                            <div class="w-12 h-12 rounded-2xl bg-white/10 border border-white/10 flex items-center justify-center font-bold text-lg flex-shrink-0 group-hover:bg-lime group-hover:text-black group-hover:border-lime transition">4</div>
+                            <div>
+                                <h4 class="text-xl font-semibold mb-2 group-hover:text-lime transition">Ship to Production</h4>
+                                <p class="text-white/50">Deploy clean, secure, battle-tested code with confidence.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Terminal -->
+                <div class="reveal" style="transition-delay: 0.2s;">
+                    <div class="terminal rounded-3xl p-6 animate-float">
+                        <div class="flex items-center gap-2 mb-6">
+                            <div class="w-3 h-3 rounded-full bg-white/20"></div>
+                            <div class="w-3 h-3 rounded-full bg-white/20"></div>
+                            <div class="w-3 h-3 rounded-full bg-white/20"></div>
+                            <span class="ml-4 text-white/30 text-sm mono">swarm.log</span>
+                        </div>
+                        <pre class="text-sm mono leading-loose overflow-x-auto"><code><span class="text-lime">▸ Scanner</span> <span class="text-white/30">initializing...</span>
+<span class="text-white/50">  Found</span> <span class="text-rose-400">23 vulnerabilities</span>
+<span class="text-white/50">  Found</span> <span class="text-amber-400">156 code smells</span>
+<span class="text-white/50">  Found</span> <span class="text-white/40">12 dead dependencies</span>
+
+<span class="text-emerald-400">▸ Tester</span> <span class="text-white/30">generating coverage...</span>
+<span class="text-white/50">  Created</span> <span class="text-white">847 unit tests</span>
+<span class="text-white/50">  Coverage</span> <span class="text-emerald-400">94.2%</span>
+
+<span class="text-amber-400">▸ Fixer</span> <span class="text-white/30">applying patches...</span>
+<span class="text-white/50">  Patched</span> <span class="text-emerald-400">23/23 vulnerabilities</span>
+<span class="text-white/50">  Resolved</span> <span class="text-emerald-400">156/156 smells</span>
+
+<span class="text-rose-400">▸ Refactor</span> <span class="text-white/30">restructuring...</span>
+<span class="text-white/50">  Applied</span> <span class="text-white">modular architecture</span>
+<span class="text-white/50">  Performance</span> <span class="text-lime">+340%</span>
+
+<span class="text-lime font-semibold">✓ Complete</span> <span class="text-white/30">Ready for production</span><span class="cursor text-lime">▋</span></code></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="relative py-24">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="text-center mb-20 reveal">
+                <span class="text-lime text-sm font-semibold uppercase tracking-widest mb-4 block">Features</span>
+                <h2 class="text-4xl md:text-5xl font-bold">Built for <span class="text-white/40">serious</span> teams.</h2>
+            </div>
+            
+            <div class="grid md:grid-cols-3 gap-6">
+                <div class="float-card spotlight rounded-2xl p-8 reveal">
+                    <div class="w-12 h-12 rounded-xl bg-lime/10 flex items-center justify-center mb-6">
+                        <i class="fas fa-bolt text-lime text-xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">Real-time Streaming</h3>
+                    <p class="text-white/50 leading-relaxed">Watch agents work live. Every scan, fix, and refactor streamed to your dashboard.</p>
+                </div>
+                
+                <div class="float-card spotlight rounded-2xl p-8 reveal" style="transition-delay: 0.05s;">
+                    <div class="w-12 h-12 rounded-xl bg-emerald-500/10 flex items-center justify-center mb-6">
+                        <i class="fas fa-code-branch text-emerald-400 text-xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">Git Native</h3>
+                    <p class="text-white/50 leading-relaxed">Automatic PRs with contextual explanations. Seamless integration with your workflow.</p>
+                </div>
+                
+                <div class="float-card spotlight rounded-2xl p-8 reveal" style="transition-delay: 0.1s;">
+                    <div class="w-12 h-12 rounded-xl bg-amber-500/10 flex items-center justify-center mb-6">
+                        <i class="fas fa-shield-halved text-amber-400 text-xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">SOC2 Compliant</h3>
+                    <p class="text-white/50 leading-relaxed">Enterprise-grade security. Your code never leaves your infrastructure.</p>
+                </div>
+                
+                <div class="float-card spotlight rounded-2xl p-8 reveal" style="transition-delay: 0.15s;">
+                    <div class="w-12 h-12 rounded-xl bg-rose-500/10 flex items-center justify-center mb-6">
+                        <i class="fas fa-globe text-rose-400 text-xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">Multi-Language</h3>
+                    <p class="text-white/50 leading-relaxed">Python, TypeScript, Go, Rust, Java, and 20+ more languages supported.</p>
+                </div>
+                
+                <div class="float-card spotlight rounded-2xl p-8 reveal" style="transition-delay: 0.2s;">
+                    <div class="w-12 h-12 rounded-xl bg-cyan-500/10 flex items-center justify-center mb-6">
+                        <i class="fas fa-rotate-left text-cyan-400 text-xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">Instant Rollback</h3>
+                    <p class="text-white/50 leading-relaxed">One-click revert on any change. Every state preserved and restorable.</p>
+                </div>
+                
+                <div class="float-card spotlight rounded-2xl p-8 reveal" style="transition-delay: 0.25s;">
+                    <div class="w-12 h-12 rounded-xl bg-violet-500/10 flex items-center justify-center mb-6">
+                        <i class="fas fa-chart-line text-violet-400 text-xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">Health Analytics</h3>
+                    <p class="text-white/50 leading-relaxed">Track code quality over time. Visualize technical debt reduction.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pricing Section -->
+    <section id="pricing" class="relative py-24">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="text-center mb-20 reveal">
+                <span class="text-lime text-sm font-semibold uppercase tracking-widest mb-4 block">Pricing</span>
+                <h2 class="text-4xl md:text-5xl font-bold">Start free. <span class="text-white/40">Scale infinitely.</span></h2>
+            </div>
+            
+            <div class="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+                <!-- Starter -->
+                <div class="float-card rounded-3xl p-8 reveal">
+                    <div class="mb-8">
+                        <h3 class="text-lg font-semibold text-white/60 mb-2">Starter</h3>
+                        <div class="flex items-baseline gap-1">
+                            <span class="text-5xl font-bold">$0</span>
+                            <span class="text-white/40">/month</span>
+                        </div>
+                    </div>
+                    <ul class="space-y-4 mb-8">
+                        <li class="flex items-center gap-3 text-white/70">
+                            <i class="fas fa-check text-lime text-sm"></i>
+                            <span>1 repository</span>
+                        </li>
+                        <li class="flex items-center gap-3 text-white/70">
+                            <i class="fas fa-check text-lime text-sm"></i>
+                            <span>Scanner swarm only</span>
+                        </li>
+                        <li class="flex items-center gap-3 text-white/70">
+                            <i class="fas fa-check text-lime text-sm"></i>
+                            <span>Weekly scans</span>
+                        </li>
+                        <li class="flex items-center gap-3 text-white/40">
+                            <i class="fas fa-xmark text-sm"></i>
+                            <span>No auto-fixing</span>
+                        </li>
+                    </ul>
+                    <button class="w-full py-4 rounded-xl bg-white/5 border border-white/10 font-semibold hover:bg-white/10 transition">
+                        Get Started
+                    </button>
+                </div>
+                
+                <!-- Pro -->
+                <div class="relative reveal" style="transition-delay: 0.1s;">
+                    <div class="absolute -inset-[1px] bg-gradient-to-b from-lime/50 to-lime/0 rounded-3xl"></div>
+                    <div class="relative float-card rounded-3xl p-8 bg-[#111] h-full">
+                        <div class="absolute -top-3 left-1/2 -translate-x-1/2">
+                            <span class="px-4 py-1.5 bg-lime text-black text-xs font-bold rounded-full uppercase tracking-wider">Popular</span>
+                        </div>
+                        <div class="mb-8">
+                            <h3 class="text-lg font-semibold text-lime mb-2">Pro</h3>
+                            <div class="flex items-baseline gap-1">
+                                <span class="text-5xl font-bold">$99</span>
+                                <span class="text-white/40">/month</span>
+                            </div>
+                        </div>
+                        <ul class="space-y-4 mb-8">
+                            <li class="flex items-center gap-3 text-white/70">
+                                <i class="fas fa-check text-lime text-sm"></i>
+                                <span>Unlimited repos</span>
+                            </li>
+                            <li class="flex items-center gap-3 text-white/70">
+                                <i class="fas fa-check text-lime text-sm"></i>
+                                <span>All 4 agent swarms</span>
+                            </li>
+                            <li class="flex items-center gap-3 text-white/70">
+                                <i class="fas fa-check text-lime text-sm"></i>
+                                <span>Real-time monitoring</span>
+                            </li>
+                            <li class="flex items-center gap-3 text-white/70">
+                                <i class="fas fa-check text-lime text-sm"></i>
+                                <span>Priority support</span>
+                            </li>
+                        </ul>
+                        <button class="w-full glow-btn py-4 rounded-xl font-semibold">
+                            Start Free Trial
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Enterprise -->
+                <div class="float-card rounded-3xl p-8 reveal" style="transition-delay: 0.2s;">
+                    <div class="mb-8">
+                        <h3 class="text-lg font-semibold text-white/60 mb-2">Enterprise</h3>
+                        <div class="flex items-baseline gap-1">
+                            <span class="text-5xl font-bold">Custom</span>
+                        </div>
+                    </div>
+                    <ul class="space-y-4 mb-8">
+                        <li class="flex items-center gap-3 text-white/70">
+                            <i class="fas fa-check text-lime text-sm"></i>
+                            <span>Custom agent training</span>
+                        </li>
+                        <li class="flex items-center gap-3 text-white/70">
+                            <i class="fas fa-check text-lime text-sm"></i>
+                            <span>On-premise deploy</span>
+                        </li>
+                        <li class="flex items-center gap-3 text-white/70">
+                            <i class="fas fa-check text-lime text-sm"></i>
+                            <span>Dedicated support</span>
+                        </li>
+                        <li class="flex items-center gap-3 text-white/70">
+                            <i class="fas fa-check text-lime text-sm"></i>
+                            <span>SLA guarantee</span>
+                        </li>
+                    </ul>
+                    <button class="w-full py-4 rounded-xl bg-white/5 border border-white/10 font-semibold hover:bg-white/10 transition">
+                        Contact Sales
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="relative py-32">
+        <div class="max-w-4xl mx-auto px-6 text-center reveal">
+            <h2 class="text-4xl md:text-6xl font-bold mb-6">
+                Ready to ship <span class="text-lime">clean code</span>?
+            </h2>
+            <p class="text-xl text-white/50 mb-10 max-w-xl mx-auto">
+                Deploy your first swarm in under 5 minutes. No credit card required.
+            </p>
+            <button class="glow-btn px-10 py-5 rounded-2xl font-semibold text-lg inline-flex items-center gap-3">
+                <span>Start Free Trial</span>
+                <i class="fas fa-arrow-right"></i>
+            </button>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="border-t border-white/5 py-16">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="flex flex-col md:flex-row items-center justify-between gap-8">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-lime rounded-xl flex items-center justify-center">
+                        <i class="fas fa-hexagon-nodes text-black text-lg"></i>
+                    </div>
+                    <span class="text-xl font-bold tracking-tight">swarm<span class="text-lime">code</span></span>
+                </div>
+                
+                <div class="flex items-center gap-8 text-sm">
+                    <a href="#" class="text-white/40 hover:text-white transition">Docs</a>
+                    <a href="#" class="text-white/40 hover:text-white transition">Blog</a>
+                    <a href="#" class="text-white/40 hover:text-white transition">Changelog</a>
+                    <a href="#" class="text-white/40 hover:text-white transition">Privacy</a>
+                    <a href="#" class="text-white/40 hover:text-white transition">Terms</a>
+                </div>
+                
+                <div class="flex items-center gap-3">
+                    <a href="#" class="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center hover:bg-lime hover:text-black transition">
+                        <i class="fab fa-x-twitter"></i>
+                    </a>
+                    <a href="#" class="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center hover:bg-lime hover:text-black transition">
+                        <i class="fab fa-github"></i>
+                    </a>
+                    <a href="#" class="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center hover:bg-lime hover:text-black transition">
+                        <i class="fab fa-discord"></i>
+                    </a>
+                </div>
+            </div>
+            
+            <div class="text-center text-white/30 text-sm mt-12 pt-8 border-t border-white/5">
+                © 2025 SwarmCode. All rights reserved.
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Scroll Reveal
+        const revealElements = document.querySelectorAll('.reveal');
+        
+        const revealOnScroll = () => {
+            revealElements.forEach(el => {
+                const elementTop = el.getBoundingClientRect().top;
+                const elementVisible = 150;
+                
+                if (elementTop < window.innerHeight - elementVisible) {
+                    el.classList.add('active');
+                }
+            });
+        };
+        
+        window.addEventListener('scroll', revealOnScroll);
+        revealOnScroll();
+
+        // Smooth scroll
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+        });
+
+        // Parallax effect on mouse move
+        document.addEventListener('mousemove', (e) => {
+            const cards = document.querySelectorAll('.float-card');
+            const x = e.clientX / window.innerWidth - 0.5;
+            const y = e.clientY / window.innerHeight - 0.5;
+            
+            cards.forEach(card => {
+                const rect = card.getBoundingClientRect();
+                const cardX = rect.left + rect.width / 2;
+                const cardY = rect.top + rect.height / 2;
+                
+                if (Math.abs(e.clientX - cardX) < 400 && Math.abs(e.clientY - cardY) < 400) {
+                    card.style.transform = `perspective(1000px) rotateY(${x * 5}deg) rotateX(${-y * 5}deg)`;
+                }
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auragen</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --accent: #00f0ff;
+            --gold: #c9a227;
+            --gold-dim: rgba(201, 162, 39, 0.15);
+            --bg-base: #050505;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-base);
+            color: #ffffff;
+            min-height: 100vh;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        h1, h2, h3, h4, .font-heading {
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        /* ========================================
+           GEOMETRIC BACKGROUND - Gold edges, dark faces
+           ======================================== */
+        .geo-bg {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        .geo-bg svg {
+            position: absolute;
+            width: 200%;
+            height: 200%;
+            top: -50%;
+            left: -50%;
+            opacity: 0.4;
+        }
+
+        /* Ambient glow layers */
+        .geo-ambient {
+            position: absolute;
+            inset: 0;
+            background: 
+                radial-gradient(ellipse 60% 50% at 30% 20%, rgba(201, 162, 39, 0.03) 0%, transparent 50%),
+                radial-gradient(ellipse 50% 60% at 80% 80%, rgba(0, 240, 255, 0.02) 0%, transparent 50%);
+        }
+
+        /* Vignette */
+        .geo-vignette {
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(ellipse 80% 80% at 50% 50%, transparent 0%, var(--bg-base) 100%);
+        }
+
+        /* ========================================
+           GLASS PANEL
+           ======================================== */
+        .glass-panel {
+            background: linear-gradient(145deg, 
+                rgba(255, 255, 255, 0.12) 0%, 
+                rgba(255, 255, 255, 0.04) 40%, 
+                rgba(255, 255, 255, 0.02) 100%);
+            backdrop-filter: blur(60px);
+            -webkit-backdrop-filter: blur(60px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 20px;
+            
+            box-shadow: 
+                0 1px 0 0 rgba(255, 255, 255, 0.2) inset,
+                0 -1px 0 0 rgba(0, 0, 0, 0.2) inset,
+                0 4px 8px -2px rgba(0, 0, 0, 0.3),
+                0 16px 32px -8px rgba(0, 0, 0, 0.4),
+                0 32px 64px -16px rgba(0, 0, 0, 0.5);
+            
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .glass-panel:hover {
+            border-color: rgba(255, 255, 255, 0.25);
+            box-shadow: 
+                0 1px 0 0 rgba(255, 255, 255, 0.25) inset,
+                0 -1px 0 0 rgba(0, 0, 0, 0.2) inset,
+                0 4px 8px -2px rgba(0, 0, 0, 0.3),
+                0 20px 40px -10px rgba(0, 0, 0, 0.45),
+                0 40px 80px -20px rgba(0, 0, 0, 0.55),
+                0 0 80px -30px rgba(201, 162, 39, 0.08);
+        }
+
+        /* ========================================
+           PREMIUM PILLS
+           ======================================== */
+        .pill {
+            position: relative;
+            padding: 12px 20px;
+            border-radius: 14px;
+            font-size: 14px;
+            font-weight: 500;
+            letter-spacing: -0.01em;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            
+            background: linear-gradient(145deg, 
+                rgba(255, 255, 255, 0.06) 0%, 
+                rgba(255, 255, 255, 0.02) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: rgba(255, 255, 255, 0.5);
+            
+            box-shadow: 
+                0 1px 0 0 rgba(255, 255, 255, 0.08) inset,
+                0 -1px 2px 0 rgba(0, 0, 0, 0.1) inset,
+                0 2px 4px -1px rgba(0, 0, 0, 0.2),
+                0 8px 16px -4px rgba(0, 0, 0, 0.15);
+        }
+
+        .pill:hover {
+            background: linear-gradient(145deg, 
+                rgba(255, 255, 255, 0.1) 0%, 
+                rgba(255, 255, 255, 0.04) 100%);
+            border-color: rgba(255, 255, 255, 0.15);
+            color: rgba(255, 255, 255, 0.8);
+            transform: translateY(-1px);
+            
+            box-shadow: 
+                0 1px 0 0 rgba(255, 255, 255, 0.12) inset,
+                0 -1px 2px 0 rgba(0, 0, 0, 0.1) inset,
+                0 4px 8px -2px rgba(0, 0, 0, 0.25),
+                0 12px 24px -6px rgba(0, 0, 0, 0.2);
+        }
+
+        .pill.active {
+            background: linear-gradient(145deg, 
+                rgba(0, 240, 255, 0.12) 0%, 
+                rgba(0, 240, 255, 0.04) 100%);
+            border-color: rgba(0, 240, 255, 0.25);
+            color: #00f0ff;
+            
+            box-shadow: 
+                0 1px 0 0 rgba(0, 240, 255, 0.15) inset,
+                0 -1px 2px 0 rgba(0, 0, 0, 0.1) inset,
+                0 2px 4px -1px rgba(0, 0, 0, 0.2),
+                0 8px 16px -4px rgba(0, 0, 0, 0.15),
+                0 0 20px -5px rgba(0, 240, 255, 0.15);
+        }
+
+        .pill-icon {
+            font-size: 16px;
+            line-height: 1;
+        }
+
+        /* ========================================
+           CTA BUTTON
+           ======================================== */
+        .cta-btn {
+            background: linear-gradient(145deg, #00f0ff 0%, #00d4e0 100%);
+            color: #000000;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 14px;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            
+            box-shadow: 
+                0 1px 0 0 rgba(255, 255, 255, 0.3) inset,
+                0 -1px 0 0 rgba(0, 0, 0, 0.1) inset,
+                0 4px 12px -2px rgba(0, 240, 255, 0.3),
+                0 12px 24px -6px rgba(0, 240, 255, 0.2);
+        }
+
+        .cta-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 
+                0 1px 0 0 rgba(255, 255, 255, 0.4) inset,
+                0 -1px 0 0 rgba(0, 0, 0, 0.1) inset,
+                0 6px 16px -2px rgba(0, 240, 255, 0.4),
+                0 16px 32px -8px rgba(0, 240, 255, 0.25);
+        }
+
+        /* ========================================
+           UTILITY BUTTONS
+           ======================================== */
+        .util-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: linear-gradient(145deg, 
+                rgba(255, 255, 255, 0.04) 0%, 
+                rgba(255, 255, 255, 0.01) 100%);
+            color: rgba(255, 255, 255, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            
+            box-shadow: 
+                0 1px 0 0 rgba(255, 255, 255, 0.06) inset,
+                0 2px 4px -1px rgba(0, 0, 0, 0.15);
+        }
+
+        .util-btn:hover {
+            border-color: rgba(255, 255, 255, 0.15);
+            color: #00f0ff;
+            box-shadow: 
+                0 1px 0 0 rgba(255, 255, 255, 0.1) inset,
+                0 4px 8px -2px rgba(0, 0, 0, 0.2),
+                0 0 15px -5px rgba(0, 240, 255, 0.2);
+        }
+
+        /* ========================================
+           INPUT FIELD
+           ======================================== */
+        .input-field {
+            background: transparent;
+            border: none;
+            outline: none;
+            resize: none;
+            width: 100%;
+            color: #ffffff;
+            font-size: 16px;
+            line-height: 1.7;
+            letter-spacing: -0.01em;
+        }
+
+        .input-field::placeholder {
+            color: rgba(255, 255, 255, 0.35);
+        }
+
+        /* ========================================
+           HEADER ELEMENTS
+           ======================================== */
+        .logo-mark {
+            width: 44px;
+            height: 44px;
+            border-radius: 14px;
+            background: linear-gradient(145deg, #0a0a0a 0%, #000000 100%);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            
+            box-shadow: 
+                0 1px 0 0 rgba(255, 255, 255, 0.1) inset,
+                0 4px 12px -2px rgba(0, 0, 0, 0.4),
+                0 0 20px -5px rgba(0, 240, 255, 0.15);
+        }
+
+        .logo-text {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 20px;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+            background: linear-gradient(135deg, #c084fc 0%, #a855f7 50%, #7c3aed 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* ========================================
+           ANIMATIONS
+           ======================================== */
+        .fade-in {
+            animation: fadeIn 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            opacity: 0;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .delay-1 { animation-delay: 0.1s; }
+        .delay-2 { animation-delay: 0.2s; }
+        .delay-3 { animation-delay: 0.35s; }
+        .delay-4 { animation-delay: 0.5s; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- Geometric Background -->
+    <div class="geo-bg">
+        <!-- SVG Geometric Pattern - Black faces, gold edges -->
+        <svg viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid slice">
+            <defs>
+                <linearGradient id="goldEdge" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" style="stop-color:#c9a227;stop-opacity:0.6" />
+                    <stop offset="50%" style="stop-color:#d4af37;stop-opacity:0.8" />
+                    <stop offset="100%" style="stop-color:#c9a227;stop-opacity:0.6" />
+                </linearGradient>
+            </defs>
+            
+            <!-- Geometric triangular mesh -->
+            <g fill="none" stroke="url(#goldEdge)" stroke-width="0.5">
+                <!-- Row 1 -->
+                <polygon points="0,0 100,0 50,80" />
+                <polygon points="100,0 200,0 150,80" />
+                <polygon points="200,0 300,0 250,80" />
+                <polygon points="300,0 400,0 350,80" />
+                <polygon points="400,0 500,0 450,80" />
+                <polygon points="500,0 600,0 550,80" />
+                <polygon points="600,0 700,0 650,80" />
+                <polygon points="700,0 800,0 750,80" />
+                <polygon points="800,0 900,0 850,80" />
+                <polygon points="900,0 1000,0 950,80" />
+                
+                <!-- Row 2 -->
+                <polygon points="50,80 150,80 100,160" />
+                <polygon points="150,80 250,80 200,160" />
+                <polygon points="250,80 350,80 300,160" />
+                <polygon points="350,80 450,80 400,160" />
+                <polygon points="450,80 550,80 500,160" />
+                <polygon points="550,80 650,80 600,160" />
+                <polygon points="650,80 750,80 700,160" />
+                <polygon points="750,80 850,80 800,160" />
+                <polygon points="850,80 950,80 900,160" />
+                
+                <!-- Inverted triangles Row 1 -->
+                <polygon points="50,80 100,0 150,80" />
+                <polygon points="150,80 200,0 250,80" />
+                <polygon points="250,80 300,0 350,80" />
+                <polygon points="350,80 400,0 450,80" />
+                <polygon points="450,80 500,0 550,80" />
+                <polygon points="550,80 600,0 650,80" />
+                <polygon points="650,80 700,0 750,80" />
+                <polygon points="750,80 800,0 850,80" />
+                <polygon points="850,80 900,0 950,80" />
+                
+                <!-- Row 3 -->
+                <polygon points="0,160 100,160 50,240" />
+                <polygon points="100,160 200,160 150,240" />
+                <polygon points="200,160 300,160 250,240" />
+                <polygon points="300,160 400,160 350,240" />
+                <polygon points="400,160 500,160 450,240" />
+                <polygon points="500,160 600,160 550,240" />
+                <polygon points="600,160 700,160 650,240" />
+                <polygon points="700,160 800,160 750,240" />
+                <polygon points="800,160 900,160 850,240" />
+                <polygon points="900,160 1000,160 950,240" />
+                
+                <!-- Inverted triangles Row 2 -->
+                <polygon points="100,160 150,80 200,160" />
+                <polygon points="200,160 250,80 300,160" />
+                <polygon points="300,160 350,80 400,160" />
+                <polygon points="400,160 450,80 500,160" />
+                <polygon points="500,160 550,80 600,160" />
+                <polygon points="600,160 650,80 700,160" />
+                <polygon points="700,160 750,80 800,160" />
+                <polygon points="800,160 850,80 900,160" />
+                
+                <!-- Row 4 -->
+                <polygon points="50,240 150,240 100,320" />
+                <polygon points="150,240 250,240 200,320" />
+                <polygon points="250,240 350,240 300,320" />
+                <polygon points="350,240 450,240 400,320" />
+                <polygon points="450,240 550,240 500,320" />
+                <polygon points="550,240 650,240 600,320" />
+                <polygon points="650,240 750,240 700,320" />
+                <polygon points="750,240 850,240 800,320" />
+                <polygon points="850,240 950,240 900,320" />
+                
+                <!-- Inverted triangles Row 3 -->
+                <polygon points="50,240 100,160 150,240" />
+                <polygon points="150,240 200,160 250,240" />
+                <polygon points="250,240 300,160 350,240" />
+                <polygon points="350,240 400,160 450,240" />
+                <polygon points="450,240 500,160 550,240" />
+                <polygon points="550,240 600,160 650,240" />
+                <polygon points="650,240 700,160 750,240" />
+                <polygon points="750,240 800,160 850,240" />
+                <polygon points="850,240 900,160 950,240" />
+                
+                <!-- Row 5 -->
+                <polygon points="0,320 100,320 50,400" />
+                <polygon points="100,320 200,320 150,400" />
+                <polygon points="200,320 300,320 250,400" />
+                <polygon points="300,320 400,320 350,400" />
+                <polygon points="400,320 500,320 450,400" />
+                <polygon points="500,320 600,320 550,400" />
+                <polygon points="600,320 700,320 650,400" />
+                <polygon points="700,320 800,320 750,400" />
+                <polygon points="800,320 900,320 850,400" />
+                <polygon points="900,320 1000,320 950,400" />
+                
+                <!-- Inverted Row 4 -->
+                <polygon points="100,320 150,240 200,320" />
+                <polygon points="200,320 250,240 300,320" />
+                <polygon points="300,320 350,240 400,320" />
+                <polygon points="400,320 450,240 500,320" />
+                <polygon points="500,320 550,240 600,320" />
+                <polygon points="600,320 650,240 700,320" />
+                <polygon points="700,320 750,240 800,320" />
+                <polygon points="800,320 850,240 900,320" />
+                
+                <!-- Row 6 -->
+                <polygon points="50,400 150,400 100,480" />
+                <polygon points="150,400 250,400 200,480" />
+                <polygon points="250,400 350,400 300,480" />
+                <polygon points="350,400 450,400 400,480" />
+                <polygon points="450,400 550,400 500,480" />
+                <polygon points="550,400 650,400 600,480" />
+                <polygon points="650,400 750,400 700,480" />
+                <polygon points="750,400 850,400 800,480" />
+                <polygon points="850,400 950,400 900,480" />
+                
+                <!-- Inverted Row 5 -->
+                <polygon points="50,400 100,320 150,400" />
+                <polygon points="150,400 200,320 250,400" />
+                <polygon points="250,400 300,320 350,400" />
+                <polygon points="350,400 400,320 450,400" />
+                <polygon points="450,400 500,320 550,400" />
+                <polygon points="550,400 600,320 650,400" />
+                <polygon points="650,400 700,320 750,400" />
+                <polygon points="750,400 800,320 850,400" />
+                <polygon points="850,400 900,320 950,400" />
+                
+                <!-- Row 7 -->
+                <polygon points="0,480 100,480 50,560" />
+                <polygon points="100,480 200,480 150,560" />
+                <polygon points="200,480 300,480 250,560" />
+                <polygon points="300,480 400,480 350,560" />
+                <polygon points="400,480 500,480 450,560" />
+                <polygon points="500,480 600,480 550,560" />
+                <polygon points="600,480 700,480 650,560" />
+                <polygon points="700,480 800,480 750,560" />
+                <polygon points="800,480 900,480 850,560" />
+                <polygon points="900,480 1000,480 950,560" />
+                
+                <!-- Inverted Row 6 -->
+                <polygon points="100,480 150,400 200,480" />
+                <polygon points="200,480 250,400 300,480" />
+                <polygon points="300,480 350,400 400,480" />
+                <polygon points="400,480 450,400 500,480" />
+                <polygon points="500,480 550,400 600,480" />
+                <polygon points="600,480 650,400 700,480" />
+                <polygon points="700,480 750,400 800,480" />
+                <polygon points="800,480 850,400 900,480" />
+                
+                <!-- Continue pattern down -->
+                <polygon points="50,560 150,560 100,640" />
+                <polygon points="150,560 250,560 200,640" />
+                <polygon points="250,560 350,560 300,640" />
+                <polygon points="350,560 450,560 400,640" />
+                <polygon points="450,560 550,560 500,640" />
+                <polygon points="550,560 650,560 600,640" />
+                <polygon points="650,560 750,560 700,640" />
+                <polygon points="750,560 850,560 800,640" />
+                <polygon points="850,560 950,560 900,640" />
+                
+                <polygon points="50,560 100,480 150,560" />
+                <polygon points="150,560 200,480 250,560" />
+                <polygon points="250,560 300,480 350,560" />
+                <polygon points="350,560 400,480 450,560" />
+                <polygon points="450,560 500,480 550,560" />
+                <polygon points="550,560 600,480 650,560" />
+                <polygon points="650,560 700,480 750,560" />
+                <polygon points="750,560 800,480 850,560" />
+                <polygon points="850,560 900,480 950,560" />
+                
+                <!-- Bottom rows -->
+                <polygon points="0,640 100,640 50,720" />
+                <polygon points="100,640 200,640 150,720" />
+                <polygon points="200,640 300,640 250,720" />
+                <polygon points="300,640 400,640 350,720" />
+                <polygon points="400,640 500,640 450,720" />
+                <polygon points="500,640 600,640 550,720" />
+                <polygon points="600,640 700,640 650,720" />
+                <polygon points="700,640 800,640 750,720" />
+                <polygon points="800,640 900,640 850,720" />
+                <polygon points="900,640 1000,640 950,720" />
+                
+                <polygon points="100,640 150,560 200,640" />
+                <polygon points="200,640 250,560 300,640" />
+                <polygon points="300,640 350,560 400,640" />
+                <polygon points="400,640 450,560 500,640" />
+                <polygon points="500,640 550,560 600,640" />
+                <polygon points="600,640 650,560 700,640" />
+                <polygon points="700,640 750,560 800,640" />
+                <polygon points="800,640 850,560 900,640" />
+                
+                <polygon points="50,720 150,720 100,800" />
+                <polygon points="150,720 250,720 200,800" />
+                <polygon points="250,720 350,720 300,800" />
+                <polygon points="350,720 450,720 400,800" />
+                <polygon points="450,720 550,720 500,800" />
+                <polygon points="550,720 650,720 600,800" />
+                <polygon points="650,720 750,720 700,800" />
+                <polygon points="750,720 850,720 800,800" />
+                <polygon points="850,720 950,720 900,800" />
+                
+                <polygon points="50,720 100,640 150,720" />
+                <polygon points="150,720 200,640 250,720" />
+                <polygon points="250,720 300,640 350,720" />
+                <polygon points="350,720 400,640 450,720" />
+                <polygon points="450,720 500,640 550,720" />
+                <polygon points="550,720 600,640 650,720" />
+                <polygon points="650,720 700,640 750,720" />
+                <polygon points="750,720 800,640 850,720" />
+                <polygon points="850,720 900,640 950,720" />
+                
+                <!-- Final rows -->
+                <polygon points="0,800 100,800 50,880" />
+                <polygon points="100,800 200,800 150,880" />
+                <polygon points="200,800 300,800 250,880" />
+                <polygon points="300,800 400,800 350,880" />
+                <polygon points="400,800 500,800 450,880" />
+                <polygon points="500,800 600,800 550,880" />
+                <polygon points="600,800 700,800 650,880" />
+                <polygon points="700,800 800,800 750,880" />
+                <polygon points="800,800 900,800 850,880" />
+                <polygon points="900,800 1000,800 950,880" />
+                
+                <polygon points="100,800 150,720 200,800" />
+                <polygon points="200,800 250,720 300,800" />
+                <polygon points="300,800 350,720 400,800" />
+                <polygon points="400,800 450,720 500,800" />
+                <polygon points="500,800 550,720 600,800" />
+                <polygon points="600,800 650,720 700,800" />
+                <polygon points="700,800 750,720 800,800" />
+                <polygon points="800,800 850,720 900,800" />
+                
+                <polygon points="50,880 150,880 100,960" />
+                <polygon points="150,880 250,880 200,960" />
+                <polygon points="250,880 350,880 300,960" />
+                <polygon points="350,880 450,880 400,960" />
+                <polygon points="450,880 550,880 500,960" />
+                <polygon points="550,880 650,880 600,960" />
+                <polygon points="650,880 750,880 700,960" />
+                <polygon points="750,880 850,880 800,960" />
+                <polygon points="850,880 950,880 900,960" />
+                
+                <polygon points="50,880 100,800 150,880" />
+                <polygon points="150,880 200,800 250,880" />
+                <polygon points="250,880 300,800 350,880" />
+                <polygon points="350,880 400,800 450,880" />
+                <polygon points="450,880 500,800 550,880" />
+                <polygon points="550,880 600,800 650,880" />
+                <polygon points="650,880 700,800 750,880" />
+                <polygon points="750,880 800,800 850,880" />
+                <polygon points="850,880 900,800 950,880" />
+                
+                <polygon points="0,960 100,960 50,1040" />
+                <polygon points="100,960 200,960 150,1040" />
+                <polygon points="200,960 300,960 250,1040" />
+                <polygon points="300,960 400,960 350,1040" />
+                <polygon points="400,960 500,960 450,1040" />
+                <polygon points="500,960 600,960 550,1040" />
+                <polygon points="600,960 700,960 650,1040" />
+                <polygon points="700,960 800,960 750,1040" />
+                <polygon points="800,960 900,960 850,1040" />
+                <polygon points="900,960 1000,960 950,1040" />
+                
+                <polygon points="100,960 150,880 200,960" />
+                <polygon points="200,960 250,880 300,960" />
+                <polygon points="300,960 350,880 400,960" />
+                <polygon points="400,960 450,880 500,960" />
+                <polygon points="500,960 550,880 600,960" />
+                <polygon points="600,960 650,880 700,960" />
+                <polygon points="700,960 750,880 800,960" />
+                <polygon points="800,960 850,880 900,960" />
+            </g>
+        </svg>
+        
+        <div class="geo-ambient"></div>
+        <div class="geo-vignette"></div>
+    </div>
+
+    <!-- Header -->
+    <header class="relative z-50 px-8 py-6 fade-in">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <div class="logo-mark">
+                    <span class="text-[#00f0ff] text-xl font-bold font-heading">A</span>
+                </div>
+                <span class="logo-text">Auragen</span>
+            </div>
+            
+            <button class="util-btn">
+                <i class="fa-solid fa-ellipsis text-sm"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col items-center justify-center px-6 pb-20 relative z-10">
+        
+        <div class="text-center mb-12 fade-in delay-1">
+            <h1 class="text-4xl md:text-5xl font-heading font-semibold text-white mb-4 tracking-tight">
+                What are you building?
+            </h1>
+            <p class="text-gray-500 text-lg">
+                Describe your app and we'll handle the rest.
+            </p>
+        </div>
+
+        <div class="w-full max-w-2xl glass-panel p-8 mb-10 fade-in delay-2">
+            <textarea 
+                id="app-description"
+                class="input-field min-h-[160px] mb-6"
+                placeholder="Describe what your app does for its users..."
+                rows="6"
+            ></textarea>
+            
+            <div class="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent mb-6"></div>
+            
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <button class="util-btn" title="Attach file">
+                        <i class="fa-solid fa-paperclip text-xs"></i>
+                    </button>
+                    <button class="util-btn" title="Voice input">
+                        <i class="fa-solid fa-microphone text-xs"></i>
+                    </button>
+                </div>
+                
+                <button class="cta-btn">
+                    <span>Continue</span>
+                    <i class="fa-solid fa-arrow-right text-xs opacity-70"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="flex flex-wrap justify-center gap-4 fade-in delay-3">
+            <button class="pill active" onclick="selectCategory(this)">
+                <span class="pill-icon">🚀</span>
+                <span>SaaS Product</span>
+            </button>
+            <button class="pill" onclick="selectCategory(this)">
+                <span class="pill-icon">🏪</span>
+                <span>Marketplace</span>
+            </button>
+            <button class="pill" onclick="selectCategory(this)">
+                <span class="pill-icon">📊</span>
+                <span>Dashboard</span>
+            </button>
+            <button class="pill" onclick="selectCategory(this)">
+                <span class="pill-icon">✨</span>
+                <span>Surprise Me</span>
+            </button>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="relative z-50 px-8 py-6 flex items-center justify-between fade-in delay-4">
+        <div class="util-btn !w-11 !h-11">
+            <span class="font-heading font-semibold text-sm text-gray-500">N²</span>
+        </div>
+        <button class="util-btn !w-11 !h-11">
+            <i class="fa-solid fa-sparkles text-sm"></i>
+        </button>
+    </footer>
+
+    <script>
+        function selectCategory(btn) {
+            document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+            btn.classList.add('active');
+            document.getElementById('app-description').focus();
+        }
+
+        const textarea = document.getElementById('app-description');
+        textarea.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = Math.min(this.scrollHeight, 300) + 'px';
+        });
+    </script>
+</body>
+</html>

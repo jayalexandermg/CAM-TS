@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auragen | Create Your App</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --accent: #00f0ff;
+            --accent-purple: #a855f7;
+            --accent-pink: #ec4899;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #030308;
+            color: #ffffff;
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+
+        h1, h2, h3, h4, .font-heading {
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        /* Frosted Gradient Glassmorphism */
+        .glass-panel {
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.04) 40%, rgba(255, 255, 255, 0.01) 100%);
+            backdrop-filter: blur(60px);
+            -webkit-backdrop-filter: blur(60px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 
+                0 30px 60px -15px rgba(0,0,0,0.8), 
+                inset 0 1px 0 rgba(255,255,255,0.2),
+                inset 0 0 40px rgba(255,255,255,0.02);
+        }
+
+        .glass-panel:hover {
+            border-color: rgba(255, 255, 255, 0.25);
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0.06) 40%, rgba(255, 255, 255, 0.02) 100%);
+        }
+
+        /* Input Glass Style */
+        .glass-input {
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%);
+            backdrop-filter: blur(40px);
+            -webkit-backdrop-filter: blur(40px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 
+                inset 0 2px 10px rgba(0,0,0,0.3),
+                0 0 0 1px rgba(255,255,255,0.05);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .glass-input:focus-within {
+            border-color: rgba(0, 240, 255, 0.4);
+            box-shadow: 
+                inset 0 2px 10px rgba(0,0,0,0.3),
+                0 0 30px rgba(0, 240, 255, 0.15),
+                0 0 0 1px rgba(0, 240, 255, 0.2);
+        }
+
+        /* Pill Buttons */
+        .pill-btn {
+            background: rgba(255, 255, 255, 0.06);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .pill-btn:hover {
+            background: rgba(255, 255, 255, 0.12);
+            border-color: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+        }
+
+        .pill-btn.active {
+            background: rgba(0, 240, 255, 0.1);
+            border-color: rgba(0, 240, 255, 0.4);
+            box-shadow: 0 0 20px rgba(0, 240, 255, 0.2);
+        }
+
+        /* Grid Floor Effect */
+        .grid-floor {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 40%;
+            background: 
+                linear-gradient(to top, rgba(0, 240, 255, 0.08) 0%, transparent 60%),
+                repeating-linear-gradient(
+                    90deg,
+                    transparent,
+                    transparent 80px,
+                    rgba(0, 240, 255, 0.1) 80px,
+                    rgba(0, 240, 255, 0.1) 81px
+                ),
+                repeating-linear-gradient(
+                    0deg,
+                    transparent,
+                    transparent 80px,
+                    rgba(0, 240, 255, 0.1) 80px,
+                    rgba(0, 240, 255, 0.1) 81px
+                );
+            transform: perspective(500px) rotateX(60deg);
+            transform-origin: bottom;
+            mask-image: linear-gradient(to top, black 0%, transparent 100%);
+            -webkit-mask-image: linear-gradient(to top, black 0%, transparent 100%);
+        }
+
+        /* Glowing Arc */
+        .glow-arc {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 600px;
+            height: 600px;
+            border-radius: 50%;
+            border: 2px solid transparent;
+            border-top-color: rgba(0, 240, 255, 0.6);
+            border-left-color: rgba(0, 240, 255, 0.3);
+            border-right-color: rgba(0, 240, 255, 0.3);
+            filter: blur(1px);
+            box-shadow: 
+                0 0 60px rgba(0, 240, 255, 0.3),
+                inset 0 0 60px rgba(0, 240, 255, 0.1);
+            animation: rotateArc 20s linear infinite;
+        }
+
+        @keyframes rotateArc {
+            from { transform: translate(-50%, -50%) rotate(0deg); }
+            to { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        /* Moon/Orb Effect */
+        .moon-orb {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, 
+                rgba(200, 230, 255, 0.9) 0%, 
+                rgba(100, 180, 220, 0.6) 40%, 
+                rgba(50, 100, 150, 0.4) 70%,
+                rgba(20, 50, 80, 0.2) 100%);
+            box-shadow: 
+                0 0 60px rgba(0, 240, 255, 0.4),
+                0 0 120px rgba(0, 240, 255, 0.2),
+                inset -20px -20px 40px rgba(0,0,0,0.3);
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-15px); }
+        }
+
+        /* CTA Button */
+        .cta-btn {
+            background: linear-gradient(135deg, #a855f7 0%, #7c3aed 100%);
+            box-shadow: 0 4px 20px rgba(168, 85, 247, 0.4);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .cta-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(168, 85, 247, 0.5);
+        }
+
+        /* Logo Gradient */
+        .logo-gradient {
+            background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* Sparkle Icon */
+        .sparkle-icon {
+            color: var(--accent);
+            filter: drop-shadow(0 0 8px var(--accent));
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 2px;
+        }
+
+        /* Text Rendering */
+        body {
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* Fade in animation */
+        .fade-in {
+            animation: fadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            opacity: 0;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .fade-in-delay-1 { animation-delay: 0.1s; }
+        .fade-in-delay-2 { animation-delay: 0.2s; }
+        .fade-in-delay-3 { animation-delay: 0.3s; }
+        .fade-in-delay-4 { animation-delay: 0.4s; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col relative overflow-hidden">
+
+    <!-- Background Effects -->
+    <div class="fixed inset-0 pointer-events-none">
+        <!-- Ambient Gradients -->
+        <div class="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] bg-purple-500/10 rounded-full blur-[150px]"></div>
+        <div class="absolute top-[20%] right-[-10%] w-[500px] h-[500px] bg-cyan-500/10 rounded-full blur-[150px]"></div>
+        <div class="absolute bottom-[-10%] left-[30%] w-[700px] h-[400px] bg-cyan-500/8 rounded-full blur-[120px]"></div>
+        
+        <!-- Grid Floor -->
+        <div class="grid-floor"></div>
+    </div>
+
+    <!-- Header -->
+    <header class="relative z-50 p-6 fade-in">
+        <div class="flex items-center justify-between">
+            <h1 class="text-2xl font-heading font-bold logo-gradient">Auragen</h1>
+            <button class="w-10 h-10 rounded-xl glass-panel flex items-center justify-center text-gray-400 hover:text-white transition-colors">
+                <i class="fa-solid fa-gear text-sm"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col items-center justify-center px-6 relative z-10 -mt-10">
+        
+        <!-- Moon Orb -->
+        <div class="moon-orb mb-8 fade-in fade-in-delay-1"></div>
+
+        <!-- Glowing Arc (behind content) -->
+        <div class="glow-arc opacity-30"></div>
+
+        <!-- Title Section -->
+        <div class="text-center mb-10 relative z-10 fade-in fade-in-delay-2">
+            <h2 class="text-5xl md:text-6xl font-heading font-bold mb-4 tracking-tight">
+                <span class="bg-gradient-to-r from-white via-white to-gray-400 bg-clip-text text-transparent">Auragen</span>
+            </h2>
+            <p class="text-gray-400 text-lg md:text-xl font-light">Custom code capabilities without the complexity</p>
+        </div>
+
+        <!-- Input Card -->
+        <div class="w-full max-w-2xl glass-panel rounded-3xl p-2 mb-10 relative z-10 fade-in fade-in-delay-3">
+            <div class="glass-input rounded-2xl p-6 min-h-[180px] flex flex-col">
+                <textarea 
+                    id="app-description"
+                    placeholder="Describe what your app does for its users..."
+                    class="flex-1 bg-transparent text-white text-lg placeholder-gray-500 outline-none resize-none leading-relaxed"
+                    rows="4"
+                ></textarea>
+                
+                <!-- Input Footer -->
+                <div class="flex items-center justify-between mt-4 pt-4 border-t border-white/5">
+                    <div class="flex items-center gap-3">
+                        <button class="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-gray-500 hover:text-white transition-all" title="Attach file">
+                            <i class="fa-solid fa-paperclip text-xs"></i>
+                        </button>
+                        <button class="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-gray-500 hover:text-white transition-all" title="Voice input">
+                            <i class="fa-solid fa-microphone text-xs"></i>
+                        </button>
+                    </div>
+                    
+                    <button class="cta-btn flex items-center gap-2 px-6 py-3 rounded-xl text-white font-bold text-sm">
+                        <i class="fa-solid fa-wand-magic-sparkles sparkle-icon text-white"></i>
+                        Next
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Category Pills -->
+        <div class="flex flex-wrap justify-center gap-3 relative z-10 fade-in fade-in-delay-4">
+            <button class="pill-btn px-5 py-3 rounded-full flex items-center gap-2 text-sm font-medium text-gray-300 hover:text-white" onclick="selectCategory(this, 'SaaS Product')">
+                <span class="text-lg">🚀</span>
+                SaaS Product
+            </button>
+            <button class="pill-btn px-5 py-3 rounded-full flex items-center gap-2 text-sm font-medium text-gray-300 hover:text-white" onclick="selectCategory(this, 'Marketplace')">
+                <span class="text-lg">🏪</span>
+                Marketplace
+            </button>
+            <button class="pill-btn px-5 py-3 rounded-full flex items-center gap-2 text-sm font-medium text-gray-300 hover:text-white" onclick="selectCategory(this, 'Dashboard')">
+                <span class="text-lg">📊</span>
+                Dashboard
+            </button>
+            <button class="pill-btn px-5 py-3 rounded-full flex items-center gap-2 text-sm font-medium text-gray-300 hover:text-white" onclick="selectCategory(this, 'Surprise Me')">
+                <span class="text-lg">🎲</span>
+                <span class="text-lg">🤖</span>
+                Surprise Me
+            </button>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="relative z-50 p-6 flex items-center justify-between">
+        <div class="w-10 h-10 rounded-xl glass-panel flex items-center justify-center text-gray-400 font-heading font-bold text-sm">
+            N<sup class="text-[8px] ml-0.5">2</sup>
+        </div>
+        <button class="w-10 h-10 rounded-xl glass-panel flex items-center justify-center text-gray-400 hover:text-cyan-400 transition-colors">
+            <i class="fa-solid fa-sparkles text-sm"></i>
+        </button>
+    </footer>
+
+    <script>
+        // Category Selection
+        function selectCategory(btn, category) {
+            // Remove active state from all pills
+            document.querySelectorAll('.pill-btn').forEach(pill => {
+                pill.classList.remove('active');
+            });
+            
+            // Add active state to clicked pill
+            btn.classList.add('active');
+            
+            // Optional: Set placeholder text based on category
+            const textarea = document.getElementById('app-description');
+            const placeholders = {
+                'SaaS Product': 'Describe your SaaS product... What problem does it solve?',
+                'Marketplace': 'Describe your marketplace... What will users buy or sell?',
+                'Dashboard': 'Describe your dashboard... What data will it display?',
+                'Surprise Me': 'Tell me anything... Let AI suggest the perfect app type!'
+            };
+            
+            textarea.placeholder = placeholders[category] || 'Describe what your app does for its users...';
+            textarea.focus();
+        }
+
+        // Auto-resize textarea
+        const textarea = document.getElementById('app-description');
+        textarea.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = Math.min(this.scrollHeight, 300) + 'px';
+        });
+    </script>
+</body>
+</html>

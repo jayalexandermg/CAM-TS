@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auragen</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --accent: #00f0ff;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #050505;
+            color: #ffffff;
+            min-height: 100vh;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        h1, h2, h3, h4, .font-heading {
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        /* Floating Ambient Orbs - From Preview Section */
+        .ambient-orb {
+            position: fixed;
+            border-radius: 50%;
+            mix-blend-mode: overlay;
+            filter: blur(120px);
+            pointer-events: none;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        .orb-cyan {
+            background: #00f0ff;
+            opacity: 0.08;
+        }
+
+        .orb-lime {
+            background: #ccff00;
+            opacity: 0.05;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-8px); }
+            100% { transform: translateY(0px); }
+        }
+
+        /* Frosted Gradient Glassmorphism - Exact from Lumos */
+        .glass-panel {
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0.06) 40%, rgba(255, 255, 255, 0.02) 100%);
+            backdrop-filter: blur(60px);
+            -webkit-backdrop-filter: blur(60px);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            box-shadow: 
+                0 30px 60px -15px rgba(0,0,0,0.8), 
+                inset 0 1px 0 rgba(255,255,255,0.35),
+                inset 0 0 40px rgba(255,255,255,0.02);
+        }
+
+        .glass-panel:hover {
+            border-color: rgba(255, 255, 255, 0.5);
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0.1) 40%, rgba(255, 255, 255, 0.05) 100%);
+            box-shadow: 
+                0 0 40px rgba(0, 240, 255, 0.15), 
+                0 30px 60px -15px rgba(0,0,0,0.9),
+                inset 0 1px 0 rgba(255,255,255,0.5);
+        }
+
+        /* Category Pills - Matching Lumos filter buttons */
+        .pill-inactive {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #9ca3af;
+            transition: all 0.3s ease;
+        }
+
+        .pill-inactive:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+        }
+
+        .pill-active {
+            background: rgba(0, 240, 255, 0.1);
+            border: 1px solid rgba(0, 240, 255, 0.3);
+            color: #00f0ff;
+        }
+
+        /* CTA Button - Cyan accent style */
+        .cta-btn {
+            background: #00f0ff;
+            color: #000000;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 15px rgba(0, 240, 255, 0.3);
+        }
+
+        .cta-btn:hover {
+            transform: scale(1.02);
+            box-shadow: 0 0 25px rgba(0, 240, 255, 0.5);
+        }
+
+        /* Icon Glow */
+        .icon-glow {
+            transition: all 0.3s ease;
+            color: rgba(255,255,255,0.5);
+        }
+
+        .icon-glow:hover {
+            color: var(--accent);
+            filter: drop-shadow(0 0 8px var(--accent));
+        }
+
+        /* Input styling */
+        .input-field {
+            background: transparent;
+            border: none;
+            outline: none;
+            resize: none;
+            width: 100%;
+            color: #ffffff;
+            font-size: 1rem;
+            line-height: 1.6;
+        }
+
+        .input-field::placeholder {
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        /* Fade in */
+        .fade-in {
+            animation: fadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            opacity: 0;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(15px) scale(0.98); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .delay-1 { animation-delay: 0.1s; }
+        .delay-2 { animation-delay: 0.2s; }
+        .delay-3 { animation-delay: 0.3s; }
+        .delay-4 { animation-delay: 0.4s; }
+
+        /* Logo gradient */
+        .logo-gradient {
+            background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 2px;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- Ambient Background Orbs (from preview section) -->
+    <div class="ambient-orb orb-cyan w-[600px] h-[600px] top-[-10%] right-[-10%]"></div>
+    <div class="ambient-orb orb-lime w-[500px] h-[500px] bottom-[-10%] left-[-10%]" style="animation-delay: 3s;"></div>
+
+    <!-- Header -->
+    <header class="relative z-50 p-6 fade-in">
+        <div class="flex items-center justify-between">
+            <!-- Logo -->
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-gray-800 to-black flex items-center justify-center border border-white/10 shadow-[0_0_20px_rgba(0,240,255,0.15)]">
+                    <span class="text-[#00f0ff] text-lg font-bold font-heading">A</span>
+                </div>
+                <span class="text-xl font-heading font-bold logo-gradient">Auragen</span>
+            </div>
+            
+            <!-- Right side placeholder -->
+            <button class="w-10 h-10 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center text-gray-400 hover:text-white transition-all">
+                <i class="fa-solid fa-ellipsis text-sm"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col items-center justify-center px-6 pb-16 relative z-10">
+        
+        <!-- Title -->
+        <div class="text-center mb-10 fade-in delay-1">
+            <h1 class="text-4xl md:text-5xl font-heading font-bold text-white mb-3 tracking-tight">
+                What are you building?
+            </h1>
+            <p class="text-gray-400 text-base md:text-lg">
+                Describe your app and we'll handle the rest.
+            </p>
+        </div>
+
+        <!-- Input Card - Glass Panel Style -->
+        <div class="w-full max-w-2xl glass-panel rounded-2xl p-6 mb-8 fade-in delay-2">
+            
+            <!-- Textarea -->
+            <textarea 
+                id="app-description"
+                class="input-field min-h-[140px] mb-4"
+                placeholder="Describe what your app does for its users..."
+                rows="5"
+            ></textarea>
+            
+            <!-- Divider -->
+            <div class="h-[1px] bg-white/10 mb-4"></div>
+            
+            <!-- Footer -->
+            <div class="flex items-center justify-between">
+                <!-- Utility buttons -->
+                <div class="flex items-center gap-2">
+                    <button class="w-9 h-9 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center transition-all group" title="Attach file">
+                        <i class="fa-solid fa-paperclip text-xs icon-glow"></i>
+                    </button>
+                    <button class="w-9 h-9 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center transition-all group" title="Voice input">
+                        <i class="fa-solid fa-microphone text-xs icon-glow"></i>
+                    </button>
+                </div>
+                
+                <!-- CTA -->
+                <button class="cta-btn flex items-center gap-2 px-6 py-2.5 rounded-lg font-bold text-sm">
+                    <span>Continue</span>
+                    <i class="fa-solid fa-arrow-right text-xs"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Category Pills -->
+        <div class="flex flex-wrap justify-center gap-3 fade-in delay-3">
+            <button class="pill-active px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2" onclick="selectCategory(this)">
+                <span>🚀</span> SaaS Product
+            </button>
+            <button class="pill-inactive px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2" onclick="selectCategory(this)">
+                <span>🏪</span> Marketplace
+            </button>
+            <button class="pill-inactive px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2" onclick="selectCategory(this)">
+                <span>📊</span> Dashboard
+            </button>
+            <button class="pill-inactive px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2" onclick="selectCategory(this)">
+                <span>✨</span> Surprise Me
+            </button>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="relative z-50 p-6 flex items-center justify-between fade-in delay-4">
+        <div class="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-gray-500 font-heading font-bold text-sm">
+            N<sup class="text-[8px] ml-0.5">2</sup>
+        </div>
+        <button class="w-10 h-10 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center transition-all group">
+            <i class="fa-solid fa-sparkles text-sm icon-glow"></i>
+        </button>
+    </footer>
+
+    <script>
+        function selectCategory(btn) {
+            // Reset all pills
+            document.querySelectorAll('[onclick="selectCategory(this)"]').forEach(pill => {
+                pill.classList.remove('pill-active');
+                pill.classList.add('pill-inactive');
+            });
+            
+            // Activate clicked
+            btn.classList.remove('pill-inactive');
+            btn.classList.add('pill-active');
+            
+            // Focus textarea
+            document.getElementById('app-description').focus();
+        }
+
+        // Auto-resize textarea
+        const textarea = document.getElementById('app-description');
+        textarea.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = Math.min(this.scrollHeight, 300) + 'px';
+        });
+    </script>
+</body>
+</html>

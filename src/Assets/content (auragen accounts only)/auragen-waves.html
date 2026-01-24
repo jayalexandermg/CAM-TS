@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auragen</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --accent: #00f0ff;
+            --gold: #b8960c;
+            --gold-light: #d4af37;
+            --bg: #050505;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: #fff;
+            min-height: 100vh;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        h1, .font-heading { font-family: 'Space Grotesk', sans-serif; }
+
+        /* Wave background canvas */
+        #wave-bg {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+        }
+
+        /* Vignette overlay for depth focus */
+        .vignette {
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(ellipse 70% 60% at 50% 50%, transparent 0%, var(--bg) 100%);
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        /* Glass panel - frosted gradient with layered shadows for premium depth */
+        .glass-panel {
+            background: linear-gradient(145deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.04) 40%, rgba(255,255,255,0.02) 100%);
+            backdrop-filter: blur(60px);
+            -webkit-backdrop-filter: blur(60px);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 20px;
+            /* Layered shadows: inner highlight, inner bottom shadow, lift, mid, ambient */
+            box-shadow: 
+                inset 0 1px 0 0 rgba(255,255,255,0.2),
+                inset 0 -1px 0 0 rgba(0,0,0,0.2),
+                0 4px 8px -2px rgba(0,0,0,0.3),
+                0 16px 32px -8px rgba(0,0,0,0.4),
+                0 32px 64px -16px rgba(0,0,0,0.5);
+            transition: all 400ms cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .glass-panel:hover {
+            border-color: rgba(255,255,255,0.25);
+            box-shadow: 
+                inset 0 1px 0 0 rgba(255,255,255,0.25),
+                inset 0 -1px 0 0 rgba(0,0,0,0.2),
+                0 4px 8px -2px rgba(0,0,0,0.3),
+                0 20px 40px -10px rgba(0,0,0,0.45),
+                0 40px 80px -20px rgba(0,0,0,0.55),
+                0 0 80px -30px rgba(184,150,12,0.06);
+        }
+
+        /* Pills - multi-layer shadow stack for refined depth */
+        .pill {
+            padding: 12px 20px;
+            border-radius: 14px;
+            font-size: 14px;
+            font-weight: 500;
+            letter-spacing: -0.01em;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: linear-gradient(145deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%);
+            border: 1px solid rgba(255,255,255,0.08);
+            color: rgba(255,255,255,0.5);
+            box-shadow: 
+                inset 0 1px 0 0 rgba(255,255,255,0.08),
+                inset 0 -1px 2px 0 rgba(0,0,0,0.1),
+                0 2px 4px -1px rgba(0,0,0,0.2),
+                0 8px 16px -4px rgba(0,0,0,0.15);
+            transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .pill:hover {
+            background: linear-gradient(145deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.04) 100%);
+            border-color: rgba(255,255,255,0.15);
+            color: rgba(255,255,255,0.8);
+            transform: translateY(-1px);
+            box-shadow: 
+                inset 0 1px 0 0 rgba(255,255,255,0.12),
+                inset 0 -1px 2px 0 rgba(0,0,0,0.1),
+                0 4px 8px -2px rgba(0,0,0,0.25),
+                0 12px 24px -6px rgba(0,0,0,0.2);
+        }
+
+        .pill.active {
+            background: linear-gradient(145deg, rgba(0,240,255,0.12) 0%, rgba(0,240,255,0.04) 100%);
+            border-color: rgba(0,240,255,0.25);
+            color: #00f0ff;
+            box-shadow: 
+                inset 0 1px 0 0 rgba(0,240,255,0.15),
+                inset 0 -1px 2px 0 rgba(0,0,0,0.1),
+                0 2px 4px -1px rgba(0,0,0,0.2),
+                0 8px 16px -4px rgba(0,0,0,0.15),
+                0 0 20px -5px rgba(0,240,255,0.15);
+        }
+
+        /* CTA button */
+        .cta-btn {
+            background: linear-gradient(145deg, #00f0ff 0%, #00d4e0 100%);
+            color: #000;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 14px;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 
+                inset 0 1px 0 0 rgba(255,255,255,0.3),
+                inset 0 -1px 0 0 rgba(0,0,0,0.1),
+                0 4px 12px -2px rgba(0,240,255,0.3),
+                0 12px 24px -6px rgba(0,240,255,0.2);
+            transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .cta-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 
+                inset 0 1px 0 0 rgba(255,255,255,0.4),
+                inset 0 -1px 0 0 rgba(0,0,0,0.1),
+                0 6px 16px -2px rgba(0,240,255,0.4),
+                0 16px 32px -8px rgba(0,240,255,0.25);
+        }
+
+        /* Utility buttons */
+        .util-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.08);
+            background: linear-gradient(145deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.01) 100%);
+            color: rgba(255,255,255,0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: inset 0 1px 0 0 rgba(255,255,255,0.06), 0 2px 4px -1px rgba(0,0,0,0.15);
+            transition: all 300ms ease;
+        }
+
+        .util-btn:hover {
+            border-color: rgba(255,255,255,0.15);
+            color: #00f0ff;
+            box-shadow: inset 0 1px 0 0 rgba(255,255,255,0.1), 0 4px 8px -2px rgba(0,0,0,0.2), 0 0 15px -5px rgba(0,240,255,0.2);
+        }
+
+        /* Input */
+        .input-field {
+            background: transparent;
+            border: none;
+            outline: none;
+            resize: none;
+            width: 100%;
+            color: #fff;
+            font-size: 16px;
+            line-height: 1.7;
+        }
+        .input-field::placeholder { color: rgba(255,255,255,0.35); }
+
+        /* Logo */
+        .logo-mark {
+            width: 44px;
+            height: 44px;
+            border-radius: 14px;
+            background: linear-gradient(145deg, #0a0a0a, #000);
+            border: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: inset 0 1px 0 0 rgba(255,255,255,0.1), 0 4px 12px -2px rgba(0,0,0,0.4), 0 0 20px -5px rgba(0,240,255,0.15);
+        }
+
+        .logo-text {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 20px;
+            font-weight: 600;
+            background: linear-gradient(135deg, #c084fc, #a855f7, #7c3aed);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Animations */
+        .fade-in { animation: fadeIn 700ms cubic-bezier(0.16,1,0.3,1) forwards; opacity: 0; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .delay-1 { animation-delay: 100ms; }
+        .delay-2 { animation-delay: 200ms; }
+        .delay-3 { animation-delay: 350ms; }
+        .delay-4 { animation-delay: 500ms; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <canvas id="wave-bg"></canvas>
+    <div class="vignette"></div>
+
+    <header class="relative z-50 px-8 py-6 fade-in">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <div class="logo-mark"><span class="text-[#00f0ff] text-xl font-bold font-heading">A</span></div>
+                <span class="logo-text">Auragen</span>
+            </div>
+            <button class="util-btn"><i class="fa-solid fa-ellipsis text-sm"></i></button>
+        </div>
+    </header>
+
+    <main class="flex-1 flex flex-col items-center justify-center px-6 pb-20 relative z-10">
+        <div class="text-center mb-12 fade-in delay-1">
+            <h1 class="text-4xl md:text-5xl font-heading font-semibold text-white mb-4 tracking-tight">What are you building?</h1>
+            <p class="text-gray-500 text-lg">Describe your app and we'll handle the rest.</p>
+        </div>
+
+        <div class="w-full max-w-2xl glass-panel p-8 mb-10 fade-in delay-2">
+            <textarea id="app-description" class="input-field min-h-[160px] mb-6" placeholder="Describe what your app does for its users..." rows="6"></textarea>
+            <div class="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent mb-6"></div>
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <button class="util-btn"><i class="fa-solid fa-paperclip text-xs"></i></button>
+                    <button class="util-btn"><i class="fa-solid fa-microphone text-xs"></i></button>
+                </div>
+                <button class="cta-btn"><span>Continue</span><i class="fa-solid fa-arrow-right text-xs opacity-70"></i></button>
+            </div>
+        </div>
+
+        <div class="flex flex-wrap justify-center gap-4 fade-in delay-3">
+            <button class="pill active" onclick="selectCategory(this)"><span>🚀</span><span>SaaS Product</span></button>
+            <button class="pill" onclick="selectCategory(this)"><span>🏪</span><span>Marketplace</span></button>
+            <button class="pill" onclick="selectCategory(this)"><span>📊</span><span>Dashboard</span></button>
+            <button class="pill" onclick="selectCategory(this)"><span>✨</span><span>Surprise Me</span></button>
+        </div>
+    </main>
+
+    <footer class="relative z-50 px-8 py-6 flex items-center justify-between fade-in delay-4">
+        <div class="util-btn !w-11 !h-11"><span class="font-heading font-semibold text-sm text-gray-500">N²</span></div>
+        <button class="util-btn !w-11 !h-11"><i class="fa-solid fa-sparkles text-sm"></i></button>
+    </footer>
+
+    <script>
+        // Flowing wave lines - creates organic topographic effect
+        const canvas = document.getElementById('wave-bg');
+        const ctx = canvas.getContext('2d');
+        let width, height;
+
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+            draw();
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, width, height);
+            
+            const lineCount = 60;
+            const baseY = height * 0.5;
+            
+            for (let i = 0; i < lineCount; i++) {
+                const progress = i / lineCount;
+                
+                // Gold gradient - darker at edges, brighter in center wave area
+                const brightness = Math.sin(progress * Math.PI) * 0.4 + 0.15;
+                ctx.strokeStyle = `rgba(184, 150, 12, ${brightness})`;
+                ctx.lineWidth = 0.8;
+                
+                ctx.beginPath();
+                
+                // Vertical offset creates the spread
+                const yOffset = (i - lineCount / 2) * 12;
+                
+                for (let x = 0; x <= width; x += 4) {
+                    const xProgress = x / width;
+                    
+                    // Multiple sine waves at different frequencies create organic flow
+                    const wave1 = Math.sin(xProgress * 4 + progress * 2) * 40;
+                    const wave2 = Math.sin(xProgress * 2.5 - progress * 1.5) * 60;
+                    const wave3 = Math.sin(xProgress * 6 + progress * 3) * 20;
+                    
+                    // Amplitude envelope - waves are stronger in center of screen
+                    const envelope = Math.sin(xProgress * Math.PI) * 0.7 + 0.3;
+                    
+                    const y = baseY + yOffset + (wave1 + wave2 + wave3) * envelope;
+                    
+                    if (x === 0) {
+                        ctx.moveTo(x, y);
+                    } else {
+                        ctx.lineTo(x, y);
+                    }
+                }
+                
+                ctx.stroke();
+            }
+        }
+
+        window.addEventListener('resize', resize);
+        resize();
+
+        // UI
+        function selectCategory(btn) {
+            document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+            btn.classList.add('active');
+            document.getElementById('app-description').focus();
+        }
+
+        document.getElementById('app-description').addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = Math.min(this.scrollHeight, 300) + 'px';
+        });
+    </script>
+</body>
+</html>

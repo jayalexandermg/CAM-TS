@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SwarmCode | Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+        
+        * {
+            font-family: 'Space Grotesk', sans-serif;
+        }
+        
+        code, .mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        :root {
+            --lime: #c8ff00;
+            --lime-dim: #a3d000;
+            --ember: #ff6b35;
+            --surface-1: #0a0a0a;
+            --surface-2: #0f0f0f;
+            --surface-3: #151515;
+            --surface-4: #1a1a1a;
+            --surface-5: #222222;
+        }
+
+        body {
+            background: var(--surface-1);
+            overflow: hidden;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.1);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        /* Panel Styling */
+        .panel {
+            background: linear-gradient(165deg, rgba(25,25,25,0.95) 0%, rgba(15,15,15,0.98) 100%);
+            border: 1px solid rgba(255,255,255,0.06);
+            box-shadow: 
+                0 4px 6px rgba(0,0,0,0.3),
+                0 10px 40px rgba(0,0,0,0.4),
+                inset 0 1px 0 rgba(255,255,255,0.04);
+        }
+
+        .panel-raised {
+            background: linear-gradient(165deg, rgba(30,30,30,0.95) 0%, rgba(20,20,20,0.98) 100%);
+            border: 1px solid rgba(255,255,255,0.08);
+            box-shadow: 
+                0 8px 16px rgba(0,0,0,0.4),
+                0 20px 60px rgba(0,0,0,0.3),
+                inset 0 1px 0 rgba(255,255,255,0.06);
+        }
+
+        .panel-inset {
+            background: rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.03);
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        /* Sidebar */
+        .sidebar {
+            background: linear-gradient(180deg, rgba(15,15,15,0.98) 0%, rgba(10,10,10,0.99) 100%);
+            border-right: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .nav-item {
+            transition: all 0.2s ease;
+        }
+
+        .nav-item:hover {
+            background: rgba(255,255,255,0.05);
+        }
+
+        .nav-item.active {
+            background: rgba(200,255,0,0.1);
+            border-right: 2px solid var(--lime);
+        }
+
+        .nav-item.active i,
+        .nav-item.active span {
+            color: var(--lime);
+        }
+
+        /* Agent Status Indicator */
+        .agent-status {
+            position: relative;
+        }
+
+        .agent-status::before {
+            content: '';
+            position: absolute;
+            inset: -3px;
+            border-radius: inherit;
+            background: inherit;
+            filter: blur(8px);
+            opacity: 0.5;
+            z-index: -1;
+        }
+
+        /* Pulse Animation */
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.2); }
+        }
+
+        .pulse-dot {
+            animation: pulse-dot 2s ease-in-out infinite;
+        }
+
+        /* Progress Ring */
+        .progress-ring {
+            transform: rotate(-90deg);
+        }
+
+        .progress-ring circle {
+            transition: stroke-dashoffset 0.5s ease;
+        }
+
+        /* Activity Line */
+        @keyframes activity-pulse {
+            0% { opacity: 0.3; }
+            50% { opacity: 1; }
+            100% { opacity: 0.3; }
+        }
+
+        .activity-line {
+            animation: activity-pulse 1.5s ease-in-out infinite;
+        }
+
+        /* Code Highlight */
+        .code-line:hover {
+            background: rgba(200,255,0,0.05);
+        }
+
+        .code-line.issue {
+            background: rgba(255,107,53,0.1);
+            border-left: 2px solid var(--ember);
+        }
+
+        .code-line.fixed {
+            background: rgba(200,255,0,0.1);
+            border-left: 2px solid var(--lime);
+        }
+
+        /* Floating Action Button */
+        .fab {
+            background: var(--lime);
+            box-shadow: 
+                0 4px 12px rgba(200,255,0,0.3),
+                0 8px 24px rgba(200,255,0,0.2);
+            transition: all 0.3s ease;
+        }
+
+        .fab:hover {
+            transform: translateY(-2px) scale(1.05);
+            box-shadow: 
+                0 6px 16px rgba(200,255,0,0.4),
+                0 12px 32px rgba(200,255,0,0.3);
+        }
+
+        /* Tab Active */
+        .tab.active {
+            color: var(--lime);
+            border-bottom: 2px solid var(--lime);
+        }
+
+        /* Swarm Card */
+        .swarm-card {
+            transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+
+        .swarm-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(255,255,255,0.15);
+        }
+
+        /* Running Animation */
+        @keyframes scanning {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 200% 50%; }
+        }
+
+        .scanning-bar {
+            background: linear-gradient(90deg, transparent, var(--lime), transparent);
+            background-size: 200% 100%;
+            animation: scanning 1.5s linear infinite;
+        }
+
+        /* Typing cursor */
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+
+        .cursor {
+            animation: blink 1s infinite;
+        }
+
+        /* Glow effect on input focus */
+        .input-glow:focus {
+            box-shadow: 0 0 0 2px rgba(200,255,0,0.2), 0 0 20px rgba(200,255,0,0.1);
+            border-color: var(--lime);
+        }
+
+        /* Tooltip */
+        .tooltip {
+            position: relative;
+        }
+
+        .tooltip::after {
+            content: attr(data-tip);
+            position: absolute;
+            left: 100%;
+            top: 50%;
+            transform: translateY(-50%);
+            margin-left: 10px;
+            padding: 6px 12px;
+            background: var(--surface-5);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 8px;
+            font-size: 12px;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s;
+        }
+
+        .tooltip:hover::after {
+            opacity: 1;
+        }
+
+        /* File Tree */
+        .file-item:hover {
+            background: rgba(255,255,255,0.03);
+        }
+
+        .file-item.selected {
+            background: rgba(200,255,0,0.1);
+        }
+
+        /* Badge */
+        .badge {
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        /* Dropdown */
+        .dropdown-menu {
+            background: var(--surface-4);
+            border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+        }
+
+        /* Timeline connector */
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: 15px;
+            top: 32px;
+            bottom: -16px;
+            width: 1px;
+            background: rgba(255,255,255,0.1);
+        }
+
+        .timeline-item:last-child::before {
+            display: none;
+        }
+    </style>
+</head>
+<body class="text-white h-screen flex">
+    <!-- Floating Preview Switcher -->
+    <div class="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] rounded-2xl p-2 flex items-center gap-2 bg-[#1a1a1a]/90 backdrop-blur-xl border border-white/10">
+        <span class="text-xs text-white/40 px-3">View:</span>
+        <a href="index.html" class="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-sm font-semibold transition">Landing</a>
+        <a href="app.html" class="px-4 py-2 rounded-xl bg-[#c8ff00] text-black text-sm font-semibold">Dashboard</a>
+        <a href="repositories.html" class="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-sm font-semibold transition">Repos</a>
+        <a href="swarms.html" class="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-sm font-semibold transition">Swarms</a>
+        <a href="pull-requests.html" class="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-sm font-semibold transition">PRs</a>
+    </div>
+
+    <!-- Sidebar -->
+    <aside class="sidebar w-64 flex flex-col h-full flex-shrink-0">
+        <!-- Logo -->
+        <div class="p-5 border-b border-white/5">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-[#c8ff00] rounded-xl flex items-center justify-center">
+                    <i class="fas fa-hexagon-nodes text-black text-lg"></i>
+                </div>
+                <span class="text-xl font-bold tracking-tight">swarm<span class="text-[#c8ff00]">code</span></span>
+            </div>
+        </div>
+
+        <!-- Navigation -->
+        <nav class="flex-1 py-4 overflow-y-auto">
+            <div class="px-3 mb-6">
+                <div class="text-[10px] uppercase tracking-widest text-white/30 font-semibold mb-2 px-3">Main</div>
+                <a href="app.html" class="nav-item active flex items-center gap-3 px-3 py-2.5 rounded-lg text-white/70">
+                    <i class="fas fa-grid-2 w-5 text-center"></i>
+                    <span class="text-sm font-medium">Dashboard</span>
+                </a>
+                <a href="repositories.html" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-white/50">
+                    <i class="fas fa-folder-tree w-5 text-center"></i>
+                    <span class="text-sm font-medium">Repositories</span>
+                    <span class="ml-auto badge bg-white/10 text-white/60">3</span>
+                </a>
+                <a href="swarms.html" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-white/50">
+                    <i class="fas fa-robot w-5 text-center"></i>
+                    <span class="text-sm font-medium">Swarms</span>
+                </a>
+                <a href="pull-requests.html" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-white/50">
+                    <i class="fas fa-code-pull-request w-5 text-center"></i>
+                    <span class="text-sm font-medium">Pull Requests</span>
+                    <span class="ml-auto badge bg-[#c8ff00]/20 text-[#c8ff00]">12</span>
+                </a>
+            </div>
+
+            <div class="px-3 mb-6">
+                <div class="text-[10px] uppercase tracking-widest text-white/30 font-semibold mb-2 px-3">Analysis</div>
+                <a href="#" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-white/50">
+                    <i class="fas fa-shield-halved w-5 text-center"></i>
+                    <span class="text-sm font-medium">Security</span>
+                    <span class="ml-auto badge bg-[#ff6b35]/20 text-[#ff6b35]">5</span>
+                </a>
+                <a href="#" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-white/50">
+                    <i class="fas fa-bug w-5 text-center"></i>
+                    <span class="text-sm font-medium">Issues</span>
+                </a>
+                <a href="#" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-white/50">
+                    <i class="fas fa-vial w-5 text-center"></i>
+                    <span class="text-sm font-medium">Test Coverage</span>
+                </a>
+                <a href="#" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-white/50">
+                    <i class="fas fa-chart-line w-5 text-center"></i>
+                    <span class="text-sm font-medium">Analytics</span>
+                </a>
+            </div>
+
+            <div class="px-3">
+                <div class="text-[10px] uppercase tracking-widest text-white/30 font-semibold mb-2 px-3">Settings</div>
+                <a href="#" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-white/50">
+                    <i class="fas fa-plug w-5 text-center"></i>
+                    <span class="text-sm font-medium">Integrations</span>
+                </a>
+                <a href="#" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-white/50">
+                    <i class="fas fa-gear w-5 text-center"></i>
+                    <span class="text-sm font-medium">Settings</span>
+                </a>
+            </div>
+        </nav>
+
+        <!-- User Section -->
+        <div class="p-4 border-t border-white/5">
+            <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-full bg-gradient-to-br from-[#c8ff00] to-[#ff6b35] flex items-center justify-center text-black font-bold text-sm">
+                    JD
+                </div>
+                <div class="flex-1 min-w-0">
+                    <div class="text-sm font-medium truncate">John Doe</div>
+                    <div class="text-xs text-white/40 truncate">Pro Plan</div>
+                </div>
+                <button class="w-8 h-8 rounded-lg hover:bg-white/5 flex items-center justify-center text-white/40 hover:text-white transition">
+                    <i class="fas fa-ellipsis-vertical"></i>
+                </button>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col h-full overflow-hidden">
+        <!-- Top Bar -->
+        <header class="h-16 border-b border-white/5 flex items-center justify-between px-6 flex-shrink-0 bg-[#0a0a0a]/80 backdrop-blur-xl">
+            <div class="flex items-center gap-4">
+                <h1 class="text-lg font-semibold">Dashboard</h1>
+                <div class="h-5 w-px bg-white/10"></div>
+                <div class="flex items-center gap-2 text-sm text-white/50">
+                    <i class="fab fa-github"></i>
+                    <span>acme/webapp-core</span>
+                    <i class="fas fa-chevron-down text-xs ml-1"></i>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-3">
+                <!-- Search -->
+                <div class="relative">
+                    <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-white/30 text-sm"></i>
+                    <input type="text" placeholder="Search..." class="w-64 bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-2 text-sm placeholder:text-white/30 focus:outline-none input-glow transition">
+                </div>
+
+                <!-- Notifications -->
+                <button class="relative w-10 h-10 rounded-xl bg-white/5 hover:bg-white/10 flex items-center justify-center transition">
+                    <i class="fas fa-bell text-white/60"></i>
+                    <span class="absolute top-2 right-2 w-2 h-2 bg-[#ff6b35] rounded-full"></span>
+                </button>
+
+                <!-- Deploy Button -->
+                <button class="fab px-5 py-2.5 rounded-xl font-semibold text-sm text-black flex items-center gap-2">
+                    <i class="fas fa-play text-xs"></i>
+                    <span>Deploy Swarm</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Content Area -->
+        <div class="flex-1 overflow-y-auto p-6 bg-[#080808]">
+            <!-- Swarm Status Cards -->
+            <div class="grid grid-cols-4 gap-4 mb-6">
+                <!-- Scanner -->
+                <div class="panel-raised rounded-2xl p-5 swarm-card">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="w-11 h-11 rounded-xl bg-[#c8ff00]/10 border border-[#c8ff00]/20 flex items-center justify-center">
+                            <i class="fas fa-radar text-[#c8ff00] text-lg"></i>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="w-2 h-2 bg-[#c8ff00] rounded-full pulse-dot"></span>
+                            <span class="text-xs text-[#c8ff00] font-medium">Running</span>
+                        </div>
+                    </div>
+                    <h3 class="font-semibold mb-1">Scanner</h3>
+                    <p class="text-xs text-white/40 mb-4">Analyzing 847 files...</p>
+                    <div class="h-1.5 bg-white/5 rounded-full overflow-hidden">
+                        <div class="h-full bg-[#c8ff00] rounded-full scanning-bar" style="width: 67%"></div>
+                    </div>
+                    <div class="text-xs text-white/40 mt-2">67% complete</div>
+                </div>
+
+                <!-- Tester -->
+                <div class="panel-raised rounded-2xl p-5 swarm-card">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="w-11 h-11 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
+                            <i class="fas fa-vial text-emerald-400 text-lg"></i>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="w-2 h-2 bg-emerald-400 rounded-full pulse-dot"></span>
+                            <span class="text-xs text-emerald-400 font-medium">Running</span>
+                        </div>
+                    </div>
+                    <h3 class="font-semibold mb-1">Tester</h3>
+                    <p class="text-xs text-white/40 mb-4">Generated 234 tests</p>
+                    <div class="h-1.5 bg-white/5 rounded-full overflow-hidden">
+                        <div class="h-full bg-emerald-400 rounded-full" style="width: 89%"></div>
+                    </div>
+                    <div class="text-xs text-white/40 mt-2">89% coverage</div>
+                </div>
+
+                <!-- Fixer -->
+                <div class="panel-raised rounded-2xl p-5 swarm-card">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="w-11 h-11 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
+                            <i class="fas fa-wrench text-amber-400 text-lg"></i>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="w-2 h-2 bg-white/30 rounded-full"></span>
+                            <span class="text-xs text-white/40 font-medium">Queued</span>
+                        </div>
+                    </div>
+                    <h3 class="font-semibold mb-1">Fixer</h3>
+                    <p class="text-xs text-white/40 mb-4">23 issues pending</p>
+                    <div class="h-1.5 bg-white/5 rounded-full overflow-hidden">
+                        <div class="h-full bg-amber-400 rounded-full" style="width: 0%"></div>
+                    </div>
+                    <div class="text-xs text-white/40 mt-2">Waiting for scan</div>
+                </div>
+
+                <!-- Refactor -->
+                <div class="panel-raised rounded-2xl p-5 swarm-card">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="w-11 h-11 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center">
+                            <i class="fas fa-layer-group text-rose-400 text-lg"></i>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="w-2 h-2 bg-white/30 rounded-full"></span>
+                            <span class="text-xs text-white/40 font-medium">Idle</span>
+                        </div>
+                    </div>
+                    <h3 class="font-semibold mb-1">Refactor</h3>
+                    <p class="text-xs text-white/40 mb-4">Ready to optimize</p>
+                    <div class="h-1.5 bg-white/5 rounded-full overflow-hidden">
+                        <div class="h-full bg-rose-400 rounded-full" style="width: 0%"></div>
+                    </div>
+                    <div class="text-xs text-white/40 mt-2">Not started</div>
+                </div>
+            </div>
+
+            <!-- Main Grid -->
+            <div class="grid grid-cols-3 gap-6">
+                <!-- Left Column - Activity & Issues -->
+                <div class="col-span-2 space-y-6">
+                    <!-- Live Activity Feed -->
+                    <div class="panel rounded-2xl overflow-hidden">
+                        <div class="px-5 py-4 border-b border-white/5 flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <h2 class="font-semibold">Live Activity</h2>
+                                <span class="w-2 h-2 bg-[#c8ff00] rounded-full pulse-dot"></span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button class="tab active px-3 py-1.5 text-xs font-medium">All</button>
+                                <button class="tab px-3 py-1.5 text-xs font-medium text-white/40 hover:text-white transition">Scans</button>
+                                <button class="tab px-3 py-1.5 text-xs font-medium text-white/40 hover:text-white transition">Fixes</button>
+                            </div>
+                        </div>
+                        <div class="p-5 max-h-80 overflow-y-auto space-y-4">
+                            <!-- Activity Items -->
+                            <div class="timeline-item relative flex gap-4">
+                                <div class="w-8 h-8 rounded-lg bg-[#c8ff00]/10 flex items-center justify-center flex-shrink-0">
+                                    <i class="fas fa-radar text-[#c8ff00] text-xs"></i>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex items-center gap-2 mb-1">
+                                        <span class="font-medium text-sm">Scanner</span>
+                                        <span class="text-xs text-white/30">just now</span>
+                                    </div>
+                                    <p class="text-sm text-white/60">Found <span class="text-[#ff6b35] font-medium">SQL injection vulnerability</span> in <code class="mono text-xs bg-white/5 px-1.5 py-0.5 rounded">api/users.ts:47</code></p>
+                                </div>
+                            </div>
+
+                            <div class="timeline-item relative flex gap-4">
+                                <div class="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center flex-shrink-0">
+                                    <i class="fas fa-vial text-emerald-400 text-xs"></i>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex items-center gap-2 mb-1">
+                                        <span class="font-medium text-sm">Tester</span>
+                                        <span class="text-xs text-white/30">2 min ago</span>
+                                    </div>
+                                    <p class="text-sm text-white/60">Generated <span class="text-emerald-400 font-medium">15 edge case tests</span> for <code class="mono text-xs bg-white/5 px-1.5 py-0.5 rounded">AuthService</code></p>
+                                </div>
+                            </div>
+
+                            <div class="timeline-item relative flex gap-4">
+                                <div class="w-8 h-8 rounded-lg bg-[#c8ff00]/10 flex items-center justify-center flex-shrink-0">
+                                    <i class="fas fa-radar text-[#c8ff00] text-xs"></i>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex items-center gap-2 mb-1">
+                                        <span class="font-medium text-sm">Scanner</span>
+                                        <span class="text-xs text-white/30">5 min ago</span>
+                                    </div>
+                                    <p class="text-sm text-white/60">Detected <span class="text-amber-400 font-medium">unused dependency</span>: <code class="mono text-xs bg-white/5 px-1.5 py-0.5 rounded">lodash@4.17.21</code></p>
+                                </div>
+                            </div>
+
+                            <div class="timeline-item relative flex gap-4">
+                                <div class="w-8 h-8 rounded-lg bg-[#c8ff00]/10 flex items-center justify-center flex-shrink-0">
+                                    <i class="fas fa-radar text-[#c8ff00] text-xs"></i>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex items-center gap-2 mb-1">
+                                        <span class="font-medium text-sm">Scanner</span>
+                                        <span class="text-xs text-white/30">8 min ago</span>
+                                    </div>
+                                    <p class="text-sm text-white/60">Found <span class="text-white/80 font-medium">code smell</span>: Function too complex in <code class="mono text-xs bg-white/5 px-1.5 py-0.5 rounded">utils/parser.ts</code></p>
+                                </div>
+                            </div>
+
+                            <div class="timeline-item relative flex gap-4">
+                                <div class="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center flex-shrink-0">
+                                    <i class="fas fa-check text-emerald-400 text-xs"></i>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex items-center gap-2 mb-1">
+                                        <span class="font-medium text-sm">Tester</span>
+                                        <span class="text-xs text-white/30">12 min ago</span>
+                                    </div>
+                                    <p class="text-sm text-white/60">All <span class="text-emerald-400 font-medium">234 tests passing</span> for current branch</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Issues Found -->
+                    <div class="panel rounded-2xl overflow-hidden">
+                        <div class="px-5 py-4 border-b border-white/5 flex items-center justify-between">
+                            <h2 class="font-semibold">Issues Found</h2>
+                            <div class="flex items-center gap-3">
+                                <span class="text-xs text-white/40">23 total</span>
+                                <button class="text-xs text-[#c8ff00] font-medium hover:underline">View all</button>
+                            </div>
+                        </div>
+                        <div class="divide-y divide-white/5">
+                            <!-- Issue Row -->
+                            <div class="px-5 py-4 hover:bg-white/[0.02] transition cursor-pointer group">
+                                <div class="flex items-start gap-4">
+                                    <div class="w-8 h-8 rounded-lg bg-[#ff6b35]/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                        <i class="fas fa-shield-xmark text-[#ff6b35] text-xs"></i>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex items-center gap-2 mb-1">
+                                            <span class="font-medium text-sm">SQL Injection Vulnerability</span>
+                                            <span class="badge bg-[#ff6b35]/20 text-[#ff6b35]">Critical</span>
+                                        </div>
+                                        <p class="text-sm text-white/50 mb-2">Unsanitized user input passed directly to database query</p>
+                                        <div class="flex items-center gap-3 text-xs text-white/30">
+                                            <span class="mono">api/users.ts:47</span>
+                                            <span>•</span>
+                                            <span>CWE-89</span>
+                                        </div>
+                                    </div>
+                                    <button class="opacity-0 group-hover:opacity-100 px-3 py-1.5 rounded-lg bg-[#c8ff00]/10 text-[#c8ff00] text-xs font-medium hover:bg-[#c8ff00]/20 transition">
+                                        Auto Fix
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="px-5 py-4 hover:bg-white/[0.02] transition cursor-pointer group">
+                                <div class="flex items-start gap-4">
+                                    <div class="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                        <i class="fas fa-triangle-exclamation text-amber-400 text-xs"></i>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex items-center gap-2 mb-1">
+                                            <span class="font-medium text-sm">Exposed API Key</span>
+                                            <span class="badge bg-amber-500/20 text-amber-400">High</span>
+                                        </div>
+                                        <p class="text-sm text-white/50 mb-2">Hardcoded API key detected in source code</p>
+                                        <div class="flex items-center gap-3 text-xs text-white/30">
+                                            <span class="mono">config/api.ts:12</span>
+                                            <span>•</span>
+                                            <span>CWE-798</span>
+                                        </div>
+                                    </div>
+                                    <button class="opacity-0 group-hover:opacity-100 px-3 py-1.5 rounded-lg bg-[#c8ff00]/10 text-[#c8ff00] text-xs font-medium hover:bg-[#c8ff00]/20 transition">
+                                        Auto Fix
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="px-5 py-4 hover:bg-white/[0.02] transition cursor-pointer group">
+                                <div class="flex items-start gap-4">
+                                    <div class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                        <i class="fas fa-code text-white/40 text-xs"></i>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex items-center gap-2 mb-1">
+                                            <span class="font-medium text-sm">Complex Function</span>
+                                            <span class="badge bg-white/10 text-white/60">Low</span>
+                                        </div>
+                                        <p class="text-sm text-white/50 mb-2">Cyclomatic complexity of 25 exceeds threshold of 10</p>
+                                        <div class="flex items-center gap-3 text-xs text-white/30">
+                                            <span class="mono">utils/parser.ts:89</span>
+                                            <span>•</span>
+                                            <span>Maintainability</span>
+                                        </div>
+                                    </div>
+                                    <button class="opacity-0 group-hover:opacity-100 px-3 py-1.5 rounded-lg bg-[#c8ff00]/10 text-[#c8ff00] text-xs font-medium hover:bg-[#c8ff00]/20 transition">
+                                        Refactor
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column - Stats & Files -->
+                <div class="space-y-6">
+                    <!-- Code Health Score -->
+                    <div class="panel-raised rounded-2xl p-6">
+                        <h3 class="text-sm font-semibold text-white/60 mb-5 uppercase tracking-wider">Code Health</h3>
+                        <div class="flex items-center justify-center mb-6">
+                            <div class="relative">
+                                <svg class="progress-ring w-32 h-32">
+                                    <circle cx="64" cy="64" r="56" stroke="rgba(255,255,255,0.05)" stroke-width="8" fill="none"/>
+                                    <circle cx="64" cy="64" r="56" stroke="url(#healthGradient)" stroke-width="8" fill="none" 
+                                        stroke-dasharray="352" stroke-dashoffset="88" stroke-linecap="round"/>
+                                    <defs>
+                                        <linearGradient id="healthGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                                            <stop offset="0%" style="stop-color:#c8ff00"/>
+                                            <stop offset="100%" style="stop-color:#ff6b35"/>
+                                        </linearGradient>
+                                    </defs>
+                                </svg>
+                                <div class="absolute inset-0 flex items-center justify-center flex-col">
+                                    <span class="text-3xl font-bold">75</span>
+                                    <span class="text-xs text-white/40">/ 100</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="space-y-3">
+                            <div class="flex items-center justify-between text-sm">
+                                <span class="text-white/50">Security</span>
+                                <div class="flex items-center gap-2">
+                                    <div class="w-20 h-1.5 bg-white/5 rounded-full overflow-hidden">
+                                        <div class="h-full bg-[#ff6b35] rounded-full" style="width: 60%"></div>
+                                    </div>
+                                    <span class="text-white/60 w-8 text-right">60</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between text-sm">
+                                <span class="text-white/50">Reliability</span>
+                                <div class="flex items-center gap-2">
+                                    <div class="w-20 h-1.5 bg-white/5 rounded-full overflow-hidden">
+                                        <div class="h-full bg-[#c8ff00] rounded-full" style="width: 85%"></div>
+                                    </div>
+                                    <span class="text-white/60 w-8 text-right">85</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between text-sm">
+                                <span class="text-white/50">Maintainability</span>
+                                <div class="flex items-center gap-2">
+                                    <div class="w-20 h-1.5 bg-white/5 rounded-full overflow-hidden">
+                                        <div class="h-full bg-[#c8ff00] rounded-full" style="width: 78%"></div>
+                                    </div>
+                                    <span class="text-white/60 w-8 text-right">78</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between text-sm">
+                                <span class="text-white/50">Coverage</span>
+                                <div class="flex items-center gap-2">
+                                    <div class="w-20 h-1.5 bg-white/5 rounded-full overflow-hidden">
+                                        <div class="h-full bg-emerald-400 rounded-full" style="width: 89%"></div>
+                                    </div>
+                                    <span class="text-white/60 w-8 text-right">89</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Stats -->
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="panel rounded-xl p-4 text-center">
+                            <div class="text-2xl font-bold text-[#c8ff00] mb-1">847</div>
+                            <div class="text-xs text-white/40">Files Scanned</div>
+                        </div>
+                        <div class="panel rounded-xl p-4 text-center">
+                            <div class="text-2xl font-bold text-[#ff6b35] mb-1">23</div>
+                            <div class="text-xs text-white/40">Issues Found</div>
+                        </div>
+                        <div class="panel rounded-xl p-4 text-center">
+                            <div class="text-2xl font-bold text-emerald-400 mb-1">234</div>
+                            <div class="text-xs text-white/40">Tests Generated</div>
+                        </div>
+                        <div class="panel rounded-xl p-4 text-center">
+                            <div class="text-2xl font-bold text-white mb-1">12</div>
+                            <div class="text-xs text-white/40">PRs Ready</div>
+                        </div>
+                    </div>
+
+                    <!-- Recent Files -->
+                    <div class="panel rounded-2xl overflow-hidden">
+                        <div class="px-5 py-4 border-b border-white/5">
+                            <h3 class="font-semibold text-sm">Recent Files</h3>
+                        </div>
+                        <div class="p-2">
+                            <div class="file-item flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer">
+                                <i class="fab fa-js text-amber-400 text-sm w-5 text-center"></i>
+                                <span class="text-sm text-white/70 truncate flex-1">api/users.ts</span>
+                                <span class="badge bg-[#ff6b35]/20 text-[#ff6b35]">2</span>
+                            </div>
+                            <div class="file-item flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer">
+                                <i class="fab fa-js text-amber-400 text-sm w-5 text-center"></i>
+                                <span class="text-sm text-white/70 truncate flex-1">config/api.ts</span>
+                                <span class="badge bg-amber-500/20 text-amber-400">1</span>
+                            </div>
+                            <div class="file-item flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer">
+                                <i class="fab fa-js text-amber-400 text-sm w-5 text-center"></i>
+                                <span class="text-sm text-white/70 truncate flex-1">utils/parser.ts</span>
+                                <span class="badge bg-white/10 text-white/50">1</span>
+                            </div>
+                            <div class="file-item flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer selected">
+                                <i class="fab fa-react text-cyan-400 text-sm w-5 text-center"></i>
+                                <span class="text-sm text-white/70 truncate flex-1">components/Auth.tsx</span>
+                                <i class="fas fa-check text-[#c8ff00] text-xs"></i>
+                            </div>
+                            <div class="file-item flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer">
+                                <i class="fab fa-python text-blue-400 text-sm w-5 text-center"></i>
+                                <span class="text-sm text-white/70 truncate flex-1">scripts/migrate.py</span>
+                                <i class="fas fa-check text-[#c8ff00] text-xs"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Terminal Preview -->
+                    <div class="panel rounded-2xl overflow-hidden">
+                        <div class="px-4 py-3 border-b border-white/5 flex items-center gap-2">
+                            <div class="w-2.5 h-2.5 rounded-full bg-white/20"></div>
+                            <div class="w-2.5 h-2.5 rounded-full bg-white/20"></div>
+                            <div class="w-2.5 h-2.5 rounded-full bg-white/20"></div>
+                            <span class="ml-3 text-xs text-white/30 mono">swarm.log</span>
+                        </div>
+                        <div class="p-4 mono text-xs leading-relaxed max-h-48 overflow-y-auto">
+                            <div class="text-white/30">[14:32:01]</div>
+                            <div><span class="text-[#c8ff00]">▸ Scanner</span> <span class="text-white/50">analyzing</span> api/</div>
+                            <div class="text-white/30">[14:32:03]</div>
+                            <div><span class="text-[#ff6b35]">✗ Found</span> <span class="text-white/70">CVE-2024-1234</span></div>
+                            <div class="text-white/30">[14:32:05]</div>
+                            <div><span class="text-emerald-400">▸ Tester</span> <span class="text-white/50">generating</span></div>
+                            <div class="text-white/30">[14:32:08]</div>
+                            <div><span class="text-emerald-400">✓</span> <span class="text-white/70">15 tests created</span></div>
+                            <div class="text-white/30">[14:32:10]</div>
+                            <div><span class="text-[#c8ff00]">▸</span> <span class="text-white/50">Scanning...</span><span class="cursor text-[#c8ff00]">▋</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Simulate real-time progress updates
+        function updateProgress() {
+            const scannerBar = document.querySelector('.scanning-bar');
+            if (scannerBar) {
+                const currentWidth = parseInt(scannerBar.style.width) || 67;
+                const newWidth = Math.min(currentWidth + Math.random() * 2, 100);
+                scannerBar.style.width = newWidth + '%';
+                scannerBar.parentElement.nextElementSibling.textContent = Math.round(newWidth) + '% complete';
+            }
+        }
+
+        setInterval(updateProgress, 3000);
+
+        // Nav item click handler
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', (e) => {
+                e.preventDefault();
+                document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+                item.classList.add('active');
+            });
+        });
+
+        // Tab click handler
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+            });
+        });
+
+        // File item click handler
+        document.querySelectorAll('.file-item').forEach(file => {
+            file.addEventListener('click', () => {
+                document.querySelectorAll('.file-item').forEach(f => f.classList.remove('selected'));
+                file.classList.add('selected');
+            });
+        });
+
+        // Deploy button animation
+        const deployBtn = document.querySelector('.fab');
+        deployBtn.addEventListener('click', () => {
+            deployBtn.innerHTML = '<i class="fas fa-spinner fa-spin text-xs"></i><span>Deploying...</span>';
+            setTimeout(() => {
+                deployBtn.innerHTML = '<i class="fas fa-check text-xs"></i><span>Deployed!</span>';
+                setTimeout(() => {
+                    deployBtn.innerHTML = '<i class="fas fa-play text-xs"></i><span>Deploy Swarm</span>';
+                }, 2000);
+            }, 2000);
+        });
+    </script>
+</body>
+</html>

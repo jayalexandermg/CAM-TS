@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auragen</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --accent: #00f0ff;
+            --gold: #c9a227;
+            --bg-base: #050505;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-base);
+            color: #ffffff;
+            min-height: 100vh;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        h1, h2, h3, h4, .font-heading {
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        /* ========================================
+           3D FACETED GEOMETRIC BACKGROUND
+           Varying face brightness + gold edges
+           ======================================== */
+        .geo-bg {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        .geo-bg svg {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+        }
+
+        .geo-vignette {
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(ellipse 70% 70% at 50% 50%, transparent 0%, var(--bg-base) 100%);
+            z-index: 2;
+        }
+
+        /* Face shade classes - simulates light hitting 3D surface */
+        .face-dark { fill: rgba(8, 8, 8, 1); }
+        .face-mid { fill: rgba(12, 12, 12, 1); }
+        .face-light { fill: rgba(18, 18, 18, 1); }
+        .face-highlight { fill: rgba(25, 25, 25, 1); }
+
+        /* ========================================
+           GLASS PANEL
+           ======================================== */
+        .glass-panel {
+            background: linear-gradient(145deg, 
+                rgba(255, 255, 255, 0.12) 0%, 
+                rgba(255, 255, 255, 0.04) 40%, 
+                rgba(255, 255, 255, 0.02) 100%);
+            backdrop-filter: blur(60px);
+            -webkit-backdrop-filter: blur(60px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 20px;
+            box-shadow: 
+                0 1px 0 0 rgba(255, 255, 255, 0.2) inset,
+                0 -1px 0 0 rgba(0, 0, 0, 0.2) inset,
+                0 4px 8px -2px rgba(0, 0, 0, 0.3),
+                0 16px 32px -8px rgba(0, 0, 0, 0.4),
+                0 32px 64px -16px rgba(0, 0, 0, 0.5);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .glass-panel:hover {
+            border-color: rgba(255, 255, 255, 0.25);
+            box-shadow: 
+                0 1px 0 0 rgba(255, 255, 255, 0.25) inset,
+                0 -1px 0 0 rgba(0, 0, 0, 0.2) inset,
+                0 4px 8px -2px rgba(0, 0, 0, 0.3),
+                0 20px 40px -10px rgba(0, 0, 0, 0.45),
+                0 40px 80px -20px rgba(0, 0, 0, 0.55),
+                0 0 80px -30px rgba(201, 162, 39, 0.08);
+        }
+
+        /* ========================================
+           PREMIUM PILLS
+           ======================================== */
+        .pill {
+            position: relative;
+            padding: 12px 20px;
+            border-radius: 14px;
+            font-size: 14px;
+            font-weight: 500;
+            letter-spacing: -0.01em;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background: linear-gradient(145deg, 
+                rgba(255, 255, 255, 0.06) 0%, 
+                rgba(255, 255, 255, 0.02) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: rgba(255, 255, 255, 0.5);
+            box-shadow: 
+                0 1px 0 0 rgba(255, 255, 255, 0.08) inset,
+                0 -1px 2px 0 rgba(0, 0, 0, 0.1) inset,
+                0 2px 4px -1px rgba(0, 0, 0, 0.2),
+                0 8px 16px -4px rgba(0, 0, 0, 0.15);
+        }
+
+        .pill:hover {
+            background: linear-gradient(145deg, 
+                rgba(255, 255, 255, 0.1) 0%, 
+                rgba(255, 255, 255, 0.04) 100%);
+            border-color: rgba(255, 255, 255, 0.15);
+            color: rgba(255, 255, 255, 0.8);
+            transform: translateY(-1px);
+            box-shadow: 
+                0 1px 0 0 rgba(255, 255, 255, 0.12) inset,
+                0 -1px 2px 0 rgba(0, 0, 0, 0.1) inset,
+                0 4px 8px -2px rgba(0, 0, 0, 0.25),
+                0 12px 24px -6px rgba(0, 0, 0, 0.2);
+        }
+
+        .pill.active {
+            background: linear-gradient(145deg, 
+                rgba(0, 240, 255, 0.12) 0%, 
+                rgba(0, 240, 255, 0.04) 100%);
+            border-color: rgba(0, 240, 255, 0.25);
+            color: #00f0ff;
+            box-shadow: 
+                0 1px 0 0 rgba(0, 240, 255, 0.15) inset,
+                0 -1px 2px 0 rgba(0, 0, 0, 0.1) inset,
+                0 2px 4px -1px rgba(0, 0, 0, 0.2),
+                0 8px 16px -4px rgba(0, 0, 0, 0.15),
+                0 0 20px -5px rgba(0, 240, 255, 0.15);
+        }
+
+        .pill-icon { font-size: 16px; line-height: 1; }
+
+        /* ========================================
+           CTA BUTTON
+           ======================================== */
+        .cta-btn {
+            background: linear-gradient(145deg, #00f0ff 0%, #00d4e0 100%);
+            color: #000000;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 14px;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 
+                0 1px 0 0 rgba(255, 255, 255, 0.3) inset,
+                0 -1px 0 0 rgba(0, 0, 0, 0.1) inset,
+                0 4px 12px -2px rgba(0, 240, 255, 0.3),
+                0 12px 24px -6px rgba(0, 240, 255, 0.2);
+        }
+
+        .cta-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 
+                0 1px 0 0 rgba(255, 255, 255, 0.4) inset,
+                0 -1px 0 0 rgba(0, 0, 0, 0.1) inset,
+                0 6px 16px -2px rgba(0, 240, 255, 0.4),
+                0 16px 32px -8px rgba(0, 240, 255, 0.25);
+        }
+
+        /* ========================================
+           UTILITY BUTTONS
+           ======================================== */
+        .util-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: linear-gradient(145deg, 
+                rgba(255, 255, 255, 0.04) 0%, 
+                rgba(255, 255, 255, 0.01) 100%);
+            color: rgba(255, 255, 255, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 
+                0 1px 0 0 rgba(255, 255, 255, 0.06) inset,
+                0 2px 4px -1px rgba(0, 0, 0, 0.15);
+        }
+
+        .util-btn:hover {
+            border-color: rgba(255, 255, 255, 0.15);
+            color: #00f0ff;
+            box-shadow: 
+                0 1px 0 0 rgba(255, 255, 255, 0.1) inset,
+                0 4px 8px -2px rgba(0, 0, 0, 0.2),
+                0 0 15px -5px rgba(0, 240, 255, 0.2);
+        }
+
+        /* ========================================
+           INPUT / HEADER / ANIMATIONS
+           ======================================== */
+        .input-field {
+            background: transparent;
+            border: none;
+            outline: none;
+            resize: none;
+            width: 100%;
+            color: #ffffff;
+            font-size: 16px;
+            line-height: 1.7;
+            letter-spacing: -0.01em;
+        }
+        .input-field::placeholder { color: rgba(255, 255, 255, 0.35); }
+
+        .logo-mark {
+            width: 44px;
+            height: 44px;
+            border-radius: 14px;
+            background: linear-gradient(145deg, #0a0a0a 0%, #000000 100%);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 
+                0 1px 0 0 rgba(255, 255, 255, 0.1) inset,
+                0 4px 12px -2px rgba(0, 0, 0, 0.4),
+                0 0 20px -5px rgba(0, 240, 255, 0.15);
+        }
+
+        .logo-text {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 20px;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+            background: linear-gradient(135deg, #c084fc 0%, #a855f7 50%, #7c3aed 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            opacity: 0;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .delay-1 { animation-delay: 0.1s; }
+        .delay-2 { animation-delay: 0.2s; }
+        .delay-3 { animation-delay: 0.35s; }
+        .delay-4 { animation-delay: 0.5s; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- 3D Faceted Geometric Background -->
+    <div class="geo-bg">
+        <svg viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid slice">
+            <defs>
+                <!-- Gold edge gradient with shimmer -->
+                <linearGradient id="gold" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#8a7020" />
+                    <stop offset="40%" stop-color="#d4af37" />
+                    <stop offset="60%" stop-color="#c9a227" />
+                    <stop offset="100%" stop-color="#8a7020" />
+                </linearGradient>
+            </defs>
+            
+            <!-- 
+                3D Effect: Each polygon has a fill (face shade) + gold stroke (edge)
+                Varying fills simulate light from top-left hitting faceted surface
+            -->
+            <g stroke="url(#gold)" stroke-width="0.8">
+                
+                <!-- Row 1 - Top edge -->
+                <polygon class="face-mid" points="0,0 180,0 120,90 60,70" />
+                <polygon class="face-light" points="180,0 340,0 280,80 120,90" />
+                <polygon class="face-highlight" points="340,0 520,0 480,95 280,80" />
+                <polygon class="face-light" points="520,0 720,0 660,85 480,95" />
+                <polygon class="face-mid" points="720,0 900,0 850,90 660,85" />
+                <polygon class="face-dark" points="900,0 1100,0 1020,80 850,90" />
+                <polygon class="face-mid" points="1100,0 1280,0 1220,95 1020,80" />
+                <polygon class="face-light" points="1280,0 1480,0 1400,85 1220,95" />
+                <polygon class="face-highlight" points="1480,0 1680,0 1620,90 1400,85" />
+                <polygon class="face-light" points="1680,0 1920,0 1920,80 1620,90" />
+                
+                <!-- Row 2 -->
+                <polygon class="face-dark" points="0,70 60,70 120,90 80,160 0,140" />
+                <polygon class="face-mid" points="60,70 120,90 280,80 220,170 80,160" />
+                <polygon class="face-light" points="120,90 280,80 480,95 400,180 220,170" />
+                <polygon class="face-highlight" points="280,80 480,95 660,85 580,175 400,180" />
+                <polygon class="face-light" points="480,95 660,85 850,90 760,185 580,175" />
+                <polygon class="face-mid" points="660,85 850,90 1020,80 940,170 760,185" />
+                <polygon class="face-dark" points="850,90 1020,80 1220,95 1120,180 940,170" />
+                <polygon class="face-mid" points="1020,80 1220,95 1400,85 1320,175 1120,180" />
+                <polygon class="face-light" points="1220,95 1400,85 1620,90 1500,180 1320,175" />
+                <polygon class="face-mid" points="1400,85 1620,90 1920,80 1920,170 1500,180" />
+                
+                <!-- Row 3 -->
+                <polygon class="face-mid" points="0,140 80,160 220,170 140,260 0,240" />
+                <polygon class="face-light" points="80,160 220,170 400,180 320,270 140,260" />
+                <polygon class="face-highlight" points="220,170 400,180 580,175 500,265 320,270" />
+                <polygon class="face-light" points="400,180 580,175 760,185 680,280 500,265" />
+                <polygon class="face-mid" points="580,175 760,185 940,170 860,270 680,280" />
+                <polygon class="face-dark" points="760,185 940,170 1120,180 1040,275 860,270" />
+                <polygon class="face-mid" points="940,170 1120,180 1320,175 1220,265 1040,275" />
+                <polygon class="face-light" points="1120,180 1320,175 1500,180 1420,270 1220,265" />
+                <polygon class="face-highlight" points="1320,175 1500,180 1920,170 1920,265 1420,270" />
+                
+                <!-- Row 4 -->
+                <polygon class="face-dark" points="0,240 140,260 320,270 240,360 0,340" />
+                <polygon class="face-mid" points="140,260 320,270 500,265 420,355 240,360" />
+                <polygon class="face-light" points="320,270 500,265 680,280 600,365 420,355" />
+                <polygon class="face-highlight" points="500,265 680,280 860,270 780,360 600,365" />
+                <polygon class="face-light" points="680,280 860,270 1040,275 960,370 780,360" />
+                <polygon class="face-mid" points="860,270 1040,275 1220,265 1140,355 960,370" />
+                <polygon class="face-dark" points="1040,275 1220,265 1420,270 1320,365 1140,355" />
+                <polygon class="face-mid" points="1220,265 1420,270 1920,265 1920,360 1320,365" />
+                
+                <!-- Row 5 -->
+                <polygon class="face-mid" points="0,340 240,360 420,355 340,450 0,440" />
+                <polygon class="face-light" points="240,360 420,355 600,365 520,455 340,450" />
+                <polygon class="face-highlight" points="420,355 600,365 780,360 700,460 520,455" />
+                <polygon class="face-light" points="600,365 780,360 960,370 880,465 700,460" />
+                <polygon class="face-mid" points="780,360 960,370 1140,355 1060,455 880,465" />
+                <polygon class="face-dark" points="960,370 1140,355 1320,365 1240,460 1060,455" />
+                <polygon class="face-mid" points="1140,355 1320,365 1920,360 1920,455 1240,460" />
+                
+                <!-- Row 6 -->
+                <polygon class="face-dark" points="0,440 340,450 520,455 440,545 0,540" />
+                <polygon class="face-mid" points="340,450 520,455 700,460 620,550 440,545" />
+                <polygon class="face-light" points="520,455 700,460 880,465 800,555 620,550" />
+                <polygon class="face-highlight" points="700,460 880,465 1060,455 980,550 800,555" />
+                <polygon class="face-light" points="880,465 1060,455 1240,460 1160,555 980,550" />
+                <polygon class="face-mid" points="1060,455 1240,460 1920,455 1920,550 1160,555" />
+                
+                <!-- Row 7 -->
+                <polygon class="face-mid" points="0,540 440,545 620,550 540,640 0,635" />
+                <polygon class="face-light" points="440,545 620,550 800,555 720,645 540,640" />
+                <polygon class="face-highlight" points="620,550 800,555 980,550 900,650 720,645" />
+                <polygon class="face-light" points="800,555 980,550 1160,555 1080,645 900,650" />
+                <polygon class="face-mid" points="980,550 1160,555 1920,550 1920,645 1080,645" />
+                
+                <!-- Row 8 -->
+                <polygon class="face-dark" points="0,635 540,640 720,645 640,735 0,730" />
+                <polygon class="face-mid" points="540,640 720,645 900,650 820,740 640,735" />
+                <polygon class="face-light" points="720,645 900,650 1080,645 1000,740 820,740" />
+                <polygon class="face-mid" points="900,650 1080,645 1920,645 1920,740 1000,740" />
+                
+                <!-- Row 9 -->
+                <polygon class="face-mid" points="0,730 640,735 820,740 740,830 0,825" />
+                <polygon class="face-light" points="640,735 820,740 1000,740 920,835 740,830" />
+                <polygon class="face-highlight" points="820,740 1000,740 1920,740 1920,835 920,835" />
+                
+                <!-- Row 10 -->
+                <polygon class="face-dark" points="0,825 740,830 920,835 840,920 0,915" />
+                <polygon class="face-mid" points="740,830 920,835 1920,835 1920,920 840,920" />
+                
+                <!-- Row 11 -->
+                <polygon class="face-mid" points="0,915 840,920 1920,920 1920,1000 0,1000" />
+                
+                <!-- Bottom fill -->
+                <polygon class="face-dark" points="0,1000 1920,1000 1920,1080 0,1080" />
+                
+            </g>
+        </svg>
+        
+        <div class="geo-vignette"></div>
+    </div>
+
+    <!-- Header -->
+    <header class="relative z-50 px-8 py-6 fade-in">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <div class="logo-mark">
+                    <span class="text-[#00f0ff] text-xl font-bold font-heading">A</span>
+                </div>
+                <span class="logo-text">Auragen</span>
+            </div>
+            <button class="util-btn">
+                <i class="fa-solid fa-ellipsis text-sm"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main -->
+    <main class="flex-1 flex flex-col items-center justify-center px-6 pb-20 relative z-10">
+        
+        <div class="text-center mb-12 fade-in delay-1">
+            <h1 class="text-4xl md:text-5xl font-heading font-semibold text-white mb-4 tracking-tight">
+                What are you building?
+            </h1>
+            <p class="text-gray-500 text-lg">Describe your app and we'll handle the rest.</p>
+        </div>
+
+        <div class="w-full max-w-2xl glass-panel p-8 mb-10 fade-in delay-2">
+            <textarea 
+                id="app-description"
+                class="input-field min-h-[160px] mb-6"
+                placeholder="Describe what your app does for its users..."
+                rows="6"
+            ></textarea>
+            <div class="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent mb-6"></div>
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <button class="util-btn" title="Attach"><i class="fa-solid fa-paperclip text-xs"></i></button>
+                    <button class="util-btn" title="Voice"><i class="fa-solid fa-microphone text-xs"></i></button>
+                </div>
+                <button class="cta-btn">
+                    <span>Continue</span>
+                    <i class="fa-solid fa-arrow-right text-xs opacity-70"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="flex flex-wrap justify-center gap-4 fade-in delay-3">
+            <button class="pill active" onclick="selectCategory(this)"><span class="pill-icon">🚀</span><span>SaaS Product</span></button>
+            <button class="pill" onclick="selectCategory(this)"><span class="pill-icon">🏪</span><span>Marketplace</span></button>
+            <button class="pill" onclick="selectCategory(this)"><span class="pill-icon">📊</span><span>Dashboard</span></button>
+            <button class="pill" onclick="selectCategory(this)"><span class="pill-icon">✨</span><span>Surprise Me</span></button>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="relative z-50 px-8 py-6 flex items-center justify-between fade-in delay-4">
+        <div class="util-btn !w-11 !h-11"><span class="font-heading font-semibold text-sm text-gray-500">N²</span></div>
+        <button class="util-btn !w-11 !h-11"><i class="fa-solid fa-sparkles text-sm"></i></button>
+    </footer>
+
+    <script>
+        function selectCategory(btn) {
+            document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+            btn.classList.add('active');
+            document.getElementById('app-description').focus();
+        }
+        const textarea = document.getElementById('app-description');
+        textarea.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = Math.min(this.scrollHeight, 300) + 'px';
+        });
+    </script>
+</body>
+</html>
