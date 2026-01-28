@@ -1,7 +1,0 @@
-# USER
-
-## Identity
-
-## Preferences
-
-## Goals

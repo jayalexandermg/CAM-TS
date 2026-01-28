@@ -432,14 +432,96 @@ describe('ProfileLoader with real profiles', () => {
     expect(profile.permissions).toContain('agent_spawn');
   });
 
+  it('should load Engineer.md profile', async () => {
+    const loader = new ProfileLoader(realProfilesDir);
+    const profile = await loader.load(path.join(realProfilesDir, 'Engineer.md'));
+
+    expect(profile.name).toBe('Engineer');
+    expect(profile.description).toBe(
+      'Senior software engineer specializing in code development, debugging, and system implementation'
+    );
+    expect(profile.permissions).toContain('file_read');
+    expect(profile.permissions).toContain('file_write');
+    expect(profile.permissions).toContain('code_execute');
+    expect(profile.permissions).toContain('shell_execute');
+    expect(profile.skills).toContain('CodeGeneration');
+    expect(profile.skills).toContain('Debugging');
+    expect(profile.skills).toContain('Testing');
+    expect(profile.traits).toContain('technical');
+    expect(profile.traits).toContain('meticulous');
+    expect(profile.color).toBe('#10B981');
+    expect(profile.contextFile).toBe('EngineerContext.md');
+  });
+
+  it('should load Architect.md profile', async () => {
+    const loader = new ProfileLoader(realProfilesDir);
+    const profile = await loader.load(path.join(realProfilesDir, 'Architect.md'));
+
+    expect(profile.name).toBe('Architect');
+    expect(profile.description).toBe(
+      'System architect specializing in software design, patterns, and technical decision-making'
+    );
+    expect(profile.permissions).toContain('file_read');
+    expect(profile.permissions).toContain('memory_read');
+    expect(profile.permissions).toContain('agent_spawn');
+    expect(profile.skills).toContain('SystemDesign');
+    expect(profile.skills).toContain('PatternSelection');
+    expect(profile.skills).toContain('ADRWriting');
+    expect(profile.traits).toContain('strategic');
+    expect(profile.traits).toContain('holistic');
+    expect(profile.color).toBe('#8B5CF6');
+    expect(profile.contextFile).toBe('ArchitectContext.md');
+  });
+
+  it('should load Security.md profile', async () => {
+    const loader = new ProfileLoader(realProfilesDir);
+    const profile = await loader.load(path.join(realProfilesDir, 'Security.md'));
+
+    expect(profile.name).toBe('Security');
+    expect(profile.description).toBe(
+      'Security specialist for vulnerability assessment, threat modeling, and security auditing'
+    );
+    expect(profile.permissions).toContain('file_read');
+    expect(profile.permissions).toContain('code_execute');
+    expect(profile.permissions).toContain('web_search');
+    expect(profile.skills).toContain('VulnerabilityAssessment');
+    expect(profile.skills).toContain('ThreatModeling');
+    expect(profile.traits).toContain('security');
+    expect(profile.traits).toContain('skeptical');
+    expect(profile.color).toBe('#EF4444');
+    expect(profile.contextFile).toBe('SecurityContext.md');
+  });
+
+  it('should load Designer.md profile', async () => {
+    const loader = new ProfileLoader(realProfilesDir);
+    const profile = await loader.load(path.join(realProfilesDir, 'Designer.md'));
+
+    expect(profile.name).toBe('Designer');
+    expect(profile.description).toBe(
+      'UX/UI designer specializing in user research, interface design, and accessibility'
+    );
+    expect(profile.permissions).toContain('file_read');
+    expect(profile.permissions).toContain('file_write');
+    expect(profile.skills).toContain('UserResearch');
+    expect(profile.skills).toContain('AccessibilityAudit');
+    expect(profile.traits).toContain('ux');
+    expect(profile.traits).toContain('empathetic');
+    expect(profile.color).toBe('#EC4899');
+    expect(profile.contextFile).toBe('DesignerContext.md');
+  });
+
   it('should load all real profiles', async () => {
     const loader = new ProfileLoader(realProfilesDir);
     const profiles = await loader.loadAll();
 
-    expect(profiles.size).toBeGreaterThanOrEqual(4);
+    expect(profiles.size).toBeGreaterThanOrEqual(8);
     expect(profiles.has('Default')).toBe(true);
     expect(profiles.has('Researcher')).toBe(true);
     expect(profiles.has('Coder')).toBe(true);
     expect(profiles.has('Coordinator')).toBe(true);
+    expect(profiles.has('Engineer')).toBe(true);
+    expect(profiles.has('Architect')).toBe(true);
+    expect(profiles.has('Security')).toBe(true);
+    expect(profiles.has('Designer')).toBe(true);
   });
 });

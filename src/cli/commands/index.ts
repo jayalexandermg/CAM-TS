@@ -9,3 +9,4 @@ export * from './VersionCommand';
 export * from './InitCommand';
 export * from './StatusCommand';
 export * from './HistoryCommand';
+export * from './AgentFactoryCommand';

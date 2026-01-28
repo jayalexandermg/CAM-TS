@@ -1,58 +1,14 @@
-Prompt_27
+/**
+ * SkillPreferencesManager - Manages skill customization preferences
+ *
+ * Provides a preference system allowing user-specific skill customization
+ * with SYSTEM defaults and USER overrides.
+ */
 
-````
-PROMPT 27: Skill Customization System
-
-[CONTEXT]
-CAM Enhancement - Phase 8: Skills Enhancement
-Repository: /home/ubuntu/github_repos/CAM-TS
-Depends on: Prompt 26 (USE WHEN Routing)
-
-Implement a preference system allowing user-specific skill customization.
-
-[TASK]
-Create the skill customization system with SYSTEM defaults and USER overrides.
-
-## Part 1: Create src/skills/customization/types.ts
-```typescript
-export interface SkillPreferences {
-  outputFormat?: 'concise' | 'detailed' | 'json' | 'markdown';
-  language?: string;
-  additionalInstructions?: string[];
-  disabled?: boolean;
-  priority?: number;  // Affects routing preference
-  customKeywords?: string[];  // Additional routing keywords
-  timeout?: number;  // Custom timeout in ms
-}
-
-export interface UserSkillConfig {
-  skillName: string;
-  preferences: SkillPreferences;
-  updatedAt: Date;
-}
-
-export interface SystemDefaults {
-  outputFormat: 'detailed';
-  language: 'en';
-  timeout: 30000;
-  priority: 50;
-}
-````
-
-## Part 2: Create src/skills/customization/SkillPreferences.ts
-
-```typescript
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import * as yaml from 'yaml';
-import { SkillPreferences, UserSkillConfig, SystemDefaults } from './types';
-
-const SYSTEM_DEFAULTS: SystemDefaults = {
-  outputFormat: 'detailed',
-  language: 'en',
-  timeout: 30000,
-  priority: 50,
-};
+import { SkillPreferences, SYSTEM_DEFAULTS } from './types';
 
 export class SkillPreferencesManager {
   private userConfigDir: string;
@@ -80,7 +36,10 @@ export class SkillPreferencesManager {
   /**
    * Set user preferences for a skill
    */
-  async setPreferences(skillName: string, prefs: Partial<SkillPreferences>): Promise<void> {
+  async setPreferences(
+    skillName: string,
+    prefs: Partial<SkillPreferences>
+  ): Promise<void> {
     const existing = await this.loadUserPreferences(skillName);
     const updated = { ...existing, ...prefs };
 
@@ -108,6 +67,8 @@ export class SkillPreferencesManager {
       modified += '\n\nProvide a concise response, focusing on key points only.';
     } else if (prefs.outputFormat === 'json') {
       modified += '\n\nRespond in valid JSON format.';
+    } else if (prefs.outputFormat === 'markdown') {
+      modified += '\n\nFormat the response using Markdown syntax.';
     }
 
     // Add language instruction
@@ -134,18 +95,59 @@ export class SkillPreferencesManager {
     return prefs.disabled === true;
   }
 
+  /**
+   * Get effective priority for a skill (used in routing)
+   */
+  async getPriority(skillName: string): Promise<number> {
+    const prefs = await this.getPreferences(skillName);
+    return prefs.priority ?? SYSTEM_DEFAULTS.priority;
+  }
+
+  /**
+   * Get custom keywords for a skill (used in routing)
+   */
+  async getCustomKeywords(skillName: string): Promise<string[]> {
+    const prefs = await this.getPreferences(skillName);
+    return prefs.customKeywords ?? [];
+  }
+
+  /**
+   * Get timeout for a skill
+   */
+  async getTimeout(skillName: string): Promise<number> {
+    const prefs = await this.getPreferences(skillName);
+    return prefs.timeout ?? SYSTEM_DEFAULTS.timeout;
+  }
+
+  /**
+   * Clear the preferences cache
+   */
+  clearCache(): void {
+    this.cache.clear();
+  }
+
+  /**
+   * Load user preferences from YAML file
+   */
   private async loadUserPreferences(skillName: string): Promise<SkillPreferences> {
     const filePath = this.getPreferencesPath(skillName);
 
     try {
       const content = await fs.readFile(filePath, 'utf-8');
-      return yaml.parse(content) as SkillPreferences;
+      const parsed = yaml.parse(content);
+      return parsed ?? {}; // Handle empty file (parses to null)
     } catch {
       return {}; // No user preferences
     }
   }
 
-  private async saveUserPreferences(skillName: string, prefs: SkillPreferences): Promise<void> {
+  /**
+   * Save user preferences to YAML file
+   */
+  private async saveUserPreferences(
+    skillName: string,
+    prefs: SkillPreferences
+  ): Promise<void> {
     const filePath = this.getPreferencesPath(skillName);
     const dir = path.dirname(filePath);
 
@@ -153,48 +155,25 @@ export class SkillPreferencesManager {
     await fs.writeFile(filePath, yaml.stringify(prefs));
   }
 
+  /**
+   * Get path to preferences file for a skill
+   */
   private getPreferencesPath(skillName: string): string {
     return path.join(this.userConfigDir, skillName, 'PREFERENCES.yaml');
   }
 
+  /**
+   * Merge user preferences with system defaults
+   */
   private mergeWithDefaults(userPrefs: SkillPreferences): SkillPreferences {
     return {
-      outputFormat: userPrefs.outputFormat || SYSTEM_DEFAULTS.outputFormat,
-      language: userPrefs.language || SYSTEM_DEFAULTS.language,
-      timeout: userPrefs.timeout || SYSTEM_DEFAULTS.timeout,
-      priority: userPrefs.priority || SYSTEM_DEFAULTS.priority,
-      additionalInstructions: userPrefs.additionalInstructions || [],
-      disabled: userPrefs.disabled || false,
-      customKeywords: userPrefs.customKeywords || [],
+      outputFormat: userPrefs.outputFormat ?? SYSTEM_DEFAULTS.outputFormat,
+      language: userPrefs.language ?? SYSTEM_DEFAULTS.language,
+      timeout: userPrefs.timeout ?? SYSTEM_DEFAULTS.timeout,
+      priority: userPrefs.priority ?? SYSTEM_DEFAULTS.priority,
+      additionalInstructions: userPrefs.additionalInstructions ?? [],
+      disabled: userPrefs.disabled ?? false,
+      customKeywords: userPrefs.customKeywords ?? [],
     };
   }
 }
-```
-
-## Part 3: Create src/skills/customization/index.ts
-
-```typescript
-export * from './types';
-export { SkillPreferencesManager } from './SkillPreferences';
-```
-
-## Part 4: Create tests/skills/customization/SkillPreferences.test.ts
-
-Write 12+ tests
-
-[VERIFICATION]
-Show me:
-
-1. SkillPreferences.ts content
-2. Test output
-
-[SUCCESS CRITERIA]
-✅ Preferences persist per skill
-✅ SYSTEM defaults + USER overrides pattern works
-✅ Prompt modification working
-✅ 12+ tests passing
-
-```
-
-end of Prompt_27
-```

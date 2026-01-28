@@ -1,7 +1,0 @@
-# PREFERENCES
-
-## Communication
-
-## Workflow
-
-## Tools
