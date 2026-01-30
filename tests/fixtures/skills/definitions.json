@@ -1,0 +1,72 @@
+{
+  "skills": {
+    "research": {
+      "name": "Research Skill",
+      "description": "Performs research and information gathering",
+      "useWhen": [
+        "User asks for research",
+        "User needs information about a topic",
+        "User wants to learn about something"
+      ],
+      "capabilities": [
+        "Search documentation",
+        "Gather information",
+        "Summarize findings"
+      ],
+      "context": "Used for research and information gathering tasks."
+    },
+    "coding": {
+      "name": "Coding Skill",
+      "description": "Writes and modifies code",
+      "useWhen": [
+        "User asks to write code",
+        "User needs a function implemented",
+        "User wants code modifications"
+      ],
+      "capabilities": [
+        "Write new code",
+        "Modify existing code",
+        "Implement algorithms"
+      ],
+      "context": "Used for code generation and modification tasks."
+    },
+    "testing": {
+      "name": "Testing Skill",
+      "description": "Creates and runs tests",
+      "useWhen": [
+        "User asks for tests",
+        "User wants to verify functionality",
+        "User needs test coverage"
+      ],
+      "capabilities": [
+        "Write unit tests",
+        "Create integration tests",
+        "Generate test data"
+      ],
+      "context": "Used for testing and validation tasks."
+    },
+    "review": {
+      "name": "Review Skill",
+      "description": "Reviews code and documentation",
+      "useWhen": [
+        "User asks for code review",
+        "User wants feedback on code",
+        "User needs quality check"
+      ],
+      "capabilities": [
+        "Review code quality",
+        "Check for bugs",
+        "Suggest improvements"
+      ],
+      "context": "Used for code review and quality assurance."
+    }
+  },
+  "routing": {
+    "patterns": {
+      "research": ["research", "find", "search", "look up", "information about"],
+      "coding": ["write code", "implement", "create function", "code for"],
+      "testing": ["test", "verify", "validate", "check", "coverage"],
+      "review": ["review", "feedback", "quality", "check code"]
+    }
+  }
+}

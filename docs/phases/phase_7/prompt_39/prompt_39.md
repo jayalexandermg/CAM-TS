@@ -1,6 +1,3 @@
-Prompt_39
-
-```
 PROMPT 39: Integration Test Suite
 
 [CONTEXT]
@@ -22,6 +19,5 @@ Target: 30+ integration tests
 ✅ 30+ integration tests
 ✅ No mocked LLM calls (use fixtures)
 ✅ Tests pass reliably
-```
 
-end of Prompt_39
+=== END OF PROMPT 39 ===

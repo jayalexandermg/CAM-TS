@@ -1,0 +1,50 @@
+{
+  "agents": {
+    "default": {
+      "name": "default",
+      "description": "Default general-purpose agent",
+      "capabilities": ["general", "conversation"],
+      "systemPrompt": "You are a helpful assistant."
+    },
+    "researcher": {
+      "name": "researcher",
+      "description": "Research and analysis specialist",
+      "capabilities": ["research", "analysis", "summarization"],
+      "systemPrompt": "You are a research specialist. Focus on gathering and analyzing information."
+    },
+    "coder": {
+      "name": "coder",
+      "description": "Software development specialist",
+      "capabilities": ["coding", "debugging", "review"],
+      "systemPrompt": "You are a coding specialist. Focus on writing clean, efficient code."
+    },
+    "reviewer": {
+      "name": "reviewer",
+      "description": "Quality assurance and review specialist",
+      "capabilities": ["review", "validation", "testing"],
+      "systemPrompt": "You are a review specialist. Focus on quality and correctness."
+    },
+    "coordinator": {
+      "name": "coordinator",
+      "description": "Task coordination and delegation specialist",
+      "capabilities": ["coordination", "delegation", "planning"],
+      "systemPrompt": "You coordinate tasks between multiple agents."
+    },
+    "analyst": {
+      "name": "analyst",
+      "description": "Data analysis specialist",
+      "capabilities": ["data-analysis", "visualization", "reporting"],
+      "systemPrompt": "You analyze data and generate insights."
+    }
+  },
+  "hierarchies": {
+    "research-team": {
+      "root": "coordinator",
+      "children": ["researcher", "analyst"]
+    },
+    "dev-team": {
+      "root": "coordinator",
+      "children": ["coder", "reviewer"]
+    }
+  }
+}

@@ -1,0 +1,58 @@
+{
+  "userContext": {
+    "name": "Test User",
+    "preferences": {
+      "language": "TypeScript",
+      "style": "functional",
+      "verbosity": "concise"
+    },
+    "history": {
+      "recentTopics": ["testing", "integration", "agents"],
+      "skillsUsed": ["coding", "research"]
+    }
+  },
+  "projectContext": {
+    "name": "infinite-aura-ts",
+    "type": "library",
+    "language": "TypeScript",
+    "framework": "Node.js",
+    "structure": {
+      "src": "Source code",
+      "tests": "Test files",
+      "docs": "Documentation"
+    }
+  },
+  "sessionContext": {
+    "id": "test-session-001",
+    "startTime": "2025-01-15T10:00:00Z",
+    "turnCount": 0,
+    "currentTask": null,
+    "agentHistory": []
+  },
+  "testScenarios": [
+    {
+      "name": "simple-query",
+      "input": "Hello, how are you?",
+      "expectedRoute": "default",
+      "expectedSuccess": true
+    },
+    {
+      "name": "research-request",
+      "input": "Research the best practices for TypeScript testing",
+      "expectedRoute": "researcher",
+      "expectedSuccess": true
+    },
+    {
+      "name": "coding-request",
+      "input": "Write a function to sort an array",
+      "expectedRoute": "coder",
+      "expectedSuccess": true
+    },
+    {
+      "name": "invalid-input",
+      "input": "<script>alert('xss')</script>",
+      "expectedRoute": null,
+      "expectedSuccess": false
+    }
+  ]
+}
