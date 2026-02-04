@@ -19,6 +19,7 @@ import { RLMEngine } from '../RLMEngine';
 import { ContextManager } from '../context/ContextManager';
 import { Sandbox } from '../sandbox/Sandbox';
 import { ReasoningResult, ReasoningMetrics } from '../types';
+import { LLMClient } from '../../llm/LLMClient';
 
 /**
  * Generates unique identifiers
@@ -53,15 +54,33 @@ export class RLMOrchestrator extends EventEmitter {
   private totalSolveTime: number = 0;
   private startTime: number;
   private resultsCache: Map<string, RLMSolveResult>;
+  private llmClient?: LLMClient;
 
-  constructor(config?: Partial<RLMOrchestratorConfig>) {
+  constructor(config?: Partial<RLMOrchestratorConfig>, llmClient?: LLMClient) {
     super();
     this.config = { ...DEFAULT_RLM_ORCHESTRATOR_CONFIG, ...config };
-    this.engine = new RLMEngine({
-      maxDepth: 5,
-      enableValidation: true,
-      enableCaching: true,
-    });
+    this.llmClient = llmClient;
+
+    // Create LLM client if not provided (uses env vars)
+    if (!this.llmClient) {
+      try {
+        this.llmClient = new LLMClient({
+          provider: 'anthropic',
+          model: 'claude-opus-4-5-20251101',
+        });
+      } catch {
+        // No API key available, will use mock
+      }
+    }
+
+    this.engine = new RLMEngine(
+      {
+        maxDepth: 5,
+        enableValidation: true,
+        enableCaching: true,
+      },
+      this.llmClient
+    );
     this.contextManager = new ContextManager({
       maxTokens: this.config.maxContextTokens,
     });
@@ -70,6 +89,21 @@ export class RLMOrchestrator extends EventEmitter {
     this.startTime = Date.now();
 
     this.setupEventForwarding();
+  }
+
+  /**
+   * Set or update the LLM client
+   */
+  setLLMClient(client: LLMClient): void {
+    this.llmClient = client;
+    this.engine.setLLMClient(client);
+  }
+
+  /**
+   * Check if using real LLM
+   */
+  isUsingRealLLM(): boolean {
+    return this.llmClient?.isRealProvider() ?? false;
   }
 
   /**

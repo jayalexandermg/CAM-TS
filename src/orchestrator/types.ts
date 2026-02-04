@@ -4,12 +4,14 @@
  * Type definitions for the orchestrator system.
  */
 
+import { LLMProvider, LLMModel } from './llm/types';
+
 export interface OrchestratorConfig {
   maxConcurrentTasks: number;
   defaultTimeout: number;
   enableLogging: boolean;
-  llmProvider?: string;
-  llmModel?: string;
+  llmProvider?: LLMProvider;
+  llmModel?: LLMModel;
   memoryBasePath?: string;
 }
 

@@ -26,7 +26,7 @@ export const DEFAULT_CONFIG: CAMConfig = {
   },
   llm: {
     provider: 'anthropic',
-    model: 'claude-3-sonnet-20240229',
+    model: 'claude-opus-4-5-20251101',
   },
   logging: {
     level: 'info',

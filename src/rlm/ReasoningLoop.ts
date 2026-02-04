@@ -24,6 +24,7 @@ import {
   RLMConfig,
   DEFAULT_RLM_CONFIG,
 } from './types';
+import { LLMClient } from '../llm/LLMClient';
 
 /**
  * Generates unique identifiers
@@ -40,10 +41,19 @@ function generateId(prefix: string): string {
 export class ReasoningLoop extends EventEmitter {
   private config: RLMConfig;
   private stepIndex: number = 0;
+  private llmClient?: LLMClient;
 
-  constructor(config?: Partial<RLMConfig>) {
+  constructor(config?: Partial<RLMConfig>, llmClient?: LLMClient) {
     super();
     this.config = { ...DEFAULT_RLM_CONFIG, ...config };
+    this.llmClient = llmClient;
+  }
+
+  /**
+   * Set or update the LLM client
+   */
+  setLLMClient(client: LLMClient): void {
+    this.llmClient = client;
   }
 
   /**
@@ -159,11 +169,17 @@ export class ReasoningLoop extends EventEmitter {
     context: ReasoningContext
   ): Promise<Solution> {
     const stepStart = Date.now();
-    const step = this.createStep('direct_solve', problem.id, problem.depth, problem.description, context);
+    const step = this.createStep(
+      'direct_solve',
+      problem.id,
+      problem.depth,
+      problem.description,
+      context
+    );
     this.emit('stepStarted', { step });
 
-    // Generate direct solution
-    const answer = this.generateDirectSolution(problem, analysis);
+    // Generate direct solution (use LLM if available)
+    const answer = await this.generateDirectSolutionAsync(problem, analysis);
     const confidence = this.evaluateSolutionConfidence(problem, answer, analysis);
 
     const solution: Solution = {
@@ -564,13 +580,47 @@ export class ReasoningLoop extends EventEmitter {
     return result;
   }
 
-  private generateDirectSolution(problem: Problem, analysis: ProblemAnalysis): string {
-    // In production, this would call an LLM
-    // For now, generate a structured response
+  private async generateDirectSolutionAsync(
+    problem: Problem,
+    analysis: ProblemAnalysis
+  ): Promise<string> {
+    // Use LLM if available
+    if (this.llmClient && this.llmClient.isRealProvider()) {
+      const systemPrompt = `You are an expert problem solver. Analyze the given problem and provide a clear, comprehensive solution.
+
+Key concepts to address: ${analysis.keyConcepts.join(', ')}
+Problem complexity: ${analysis.complexity}
+Context: ${problem.context || 'None provided'}
+${problem.constraints?.length ? `Constraints: ${problem.constraints.join(', ')}` : ''}
+
+Provide a direct, actionable solution. Be concise but thorough.`;
+
+      try {
+        const response = await this.llmClient.chat(systemPrompt, problem.description);
+        return response;
+      } catch (error) {
+        // Fall back to template if LLM fails
+        this.emit('llmError', { error, problem: problem.id });
+      }
+    }
+
+    // Fallback: generate a structured response
     const concepts = analysis.keyConcepts.join(', ');
-    return `Solution for "${problem.description}": Based on analysis of ${concepts}, ` +
-           `the approach involves addressing each aspect systematically. ` +
-           `${analysis.reasoning}`;
+    return (
+      `Solution for "${problem.description}": Based on analysis of ${concepts}, ` +
+      `the approach involves addressing each aspect systematically. ` +
+      `${analysis.reasoning}`
+    );
+  }
+
+  private generateDirectSolution(problem: Problem, analysis: ProblemAnalysis): string {
+    // Synchronous fallback for compatibility
+    const concepts = analysis.keyConcepts.join(', ');
+    return (
+      `Solution for "${problem.description}": Based on analysis of ${concepts}, ` +
+      `the approach involves addressing each aspect systematically. ` +
+      `${analysis.reasoning}`
+    );
   }
 
   private evaluateSolutionConfidence(

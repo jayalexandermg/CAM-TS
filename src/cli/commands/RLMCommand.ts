@@ -168,10 +168,15 @@ Examples:
   private handleStatus(): CommandResult {
     const state = this.orchestrator.getState();
     const contextStats = this.orchestrator.getContextManager().getStats();
+    const usingRealLLM = this.orchestrator.isUsingRealLLM();
 
     const output = `
 RLM Orchestrator Status
 =======================
+
+LLM:
+  Provider:  ${usingRealLLM ? 'Anthropic (Claude Opus 4.5)' : 'Mock'}
+  Status:    ${usingRealLLM ? 'Connected' : 'No API key'}
 
 Tasks:
   Active:    ${state.activeTasks}

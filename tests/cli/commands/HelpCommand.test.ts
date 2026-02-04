@@ -75,7 +75,9 @@ describe('HelpCommand', () => {
     it('should return help description', () => {
       const help = helpCommand.getHelp();
 
-      expect(help).toBe('Display help information');
+      expect(help).toContain('CAM - Context-Aware Memory System');
+      expect(help).toContain('Commands:');
+      expect(help).toContain('Usage:');
     });
   });
 

@@ -4,6 +4,8 @@
  * Type definitions for the CAM configuration system.
  */
 
+import { LLMProvider, LLMModel } from '../llm/types';
+
 /**
  * Log levels for the logging system
  */
@@ -30,11 +32,11 @@ export interface OrchestratorConfigSection {
 /**
  * LLM provider configuration options
  */
-export interface LLMConfig {
-  /** LLM provider name (e.g., 'anthropic', 'openai') */
-  provider: string;
+export interface LLMConfigSection {
+  /** LLM provider name (e.g., 'anthropic', 'mock') */
+  provider: LLMProvider;
   /** Model name to use */
-  model: string;
+  model: LLMModel;
   /** API key for the provider (optional, can use env vars) */
   apiKey?: string;
 }
@@ -58,7 +60,7 @@ export interface CAMConfig {
   /** Orchestrator configuration */
   orchestrator: OrchestratorConfigSection;
   /** LLM provider configuration */
-  llm: LLMConfig;
+  llm: LLMConfigSection;
   /** Logging configuration */
   logging: LoggingConfig;
 }
@@ -69,6 +71,9 @@ export interface CAMConfig {
 export type PartialCAMConfig = {
   memory?: Partial<MemoryConfig>;
   orchestrator?: Partial<OrchestratorConfigSection>;
-  llm?: Partial<LLMConfig>;
+  llm?: Partial<LLMConfigSection>;
   logging?: Partial<LoggingConfig>;
 };
+
+/** @deprecated Use LLMConfigSection instead */
+export type LLMConfig = LLMConfigSection;

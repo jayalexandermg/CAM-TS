@@ -16,7 +16,7 @@ export class HelpCommand extends BaseCommandHandler {
   }
 
   getHelp(): string {
-    return 'Display help information';
+    return this.getHelpText();
   }
 
   getDescription(): string {
@@ -34,6 +34,10 @@ Commands:
   help              Show this help message
   version           Show version information
   init              Initialize CAM in current directory
+  status            Show orchestrator state, agents, and resource usage
+  rlm               Recursive Language Model reasoning commands
+  agent             Create dynamic agents from tasks, traits, or examples
+  history           View and manage command history
 
 Options:
   --help, -h        Show help
@@ -41,8 +45,10 @@ Options:
 
 Examples:
   cam help
-  cam version
-  cam init
+  cam status
+  cam rlm solve "What is 2+2?"
+  cam agent create --task "Review code"
+  cam <command> help   Show help for a specific command
     `.trim();
   }
 }

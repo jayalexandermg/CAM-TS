@@ -53,8 +53,8 @@ export class Orchestrator extends EventEmitter {
       maxConcurrentTasks: config?.maxConcurrentTasks || 5,
       defaultTimeout: config?.defaultTimeout || 300000, // 5 minutes
       enableLogging: config?.enableLogging ?? true,
-      llmProvider: config?.llmProvider || 'mock',
-      llmModel: config?.llmModel || 'mock-model',
+      llmProvider: config?.llmProvider || 'anthropic',
+      llmModel: config?.llmModel || 'claude-opus-4-5-20251101',
       memoryBasePath:
         config?.memoryBasePath || path.join(os.homedir(), '.infinite-aura-ts', 'memory'),
     };

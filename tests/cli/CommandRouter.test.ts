@@ -93,7 +93,7 @@ describe('CommandRouter', () => {
       expect(result.output).toBe('test output');
     });
 
-    it('should throw CommandNotFoundError for unknown command', async () => {
+    it('should return error result for unknown command', async () => {
       const command: Command = {
         name: 'unknown',
         flags: new Map(),
@@ -101,7 +101,9 @@ describe('CommandRouter', () => {
         positional: [],
       };
 
-      await expect(router.route(command)).rejects.toThrow(CommandNotFoundError);
+      const result = await router.route(command);
+      expect(result.exitCode).toBe(1);
+      expect(result.error).toContain('Unknown command: unknown');
     });
 
     it('should catch handler errors and return failure result', async () => {

@@ -5,7 +5,6 @@
  */
 
 import { Command, CommandHandler, CommandResult } from './types';
-import { CommandNotFoundError } from './errors';
 
 /**
  * Routes commands to registered handlers
@@ -37,8 +36,23 @@ export class CommandRouter {
   async route(command: Command): Promise<CommandResult> {
     const handler = this.handlers.get(command.name);
 
+    // Unknown command - show error with global help
     if (!handler) {
-      throw new CommandNotFoundError(command.name);
+      const helpHandler = this.handlers.get('help');
+      const globalHelp = helpHandler?.getHelp() || '';
+      return {
+        exitCode: 1,
+        error: `Unknown command: ${command.name}\n\n${globalHelp}`,
+      };
+    }
+
+    // Handle "<command> help" pattern - show command-specific help
+    if (command.subcommand === 'help') {
+      const commandHelp = handler.getHelp();
+      return {
+        exitCode: 0,
+        output: commandHelp,
+      };
     }
 
     try {

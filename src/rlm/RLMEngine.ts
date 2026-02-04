@@ -23,6 +23,7 @@ import {
   RLMEvents,
   DEFAULT_RLM_CONFIG,
 } from './types';
+import { LLMClient } from '../llm/LLMClient';
 
 /**
  * Generates unique identifiers
@@ -41,15 +42,25 @@ export class RLMEngine extends EventEmitter {
   private reasoningLoop: ReasoningLoop;
   private activeTraces: Map<string, ReasoningContext>;
   private completedTraces: Map<string, ReasoningResult>;
+  private llmClient?: LLMClient;
 
-  constructor(config?: Partial<RLMConfig>) {
+  constructor(config?: Partial<RLMConfig>, llmClient?: LLMClient) {
     super();
     this.config = { ...DEFAULT_RLM_CONFIG, ...config };
-    this.reasoningLoop = new ReasoningLoop(this.config);
+    this.llmClient = llmClient;
+    this.reasoningLoop = new ReasoningLoop(this.config, llmClient);
     this.activeTraces = new Map();
     this.completedTraces = new Map();
 
     this.setupEventForwarding();
+  }
+
+  /**
+   * Set or update the LLM client
+   */
+  setLLMClient(client: LLMClient): void {
+    this.llmClient = client;
+    this.reasoningLoop.setLLMClient(client);
   }
 
   /**
@@ -296,7 +307,7 @@ export class RLMEngine extends EventEmitter {
    */
   updateConfig(updates: Partial<RLMConfig>): void {
     this.config = { ...this.config, ...updates };
-    this.reasoningLoop = new ReasoningLoop(this.config);
+    this.reasoningLoop = new ReasoningLoop(this.config, this.llmClient);
     this.setupEventForwarding();
   }
 

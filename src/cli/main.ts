@@ -6,15 +6,25 @@
  * Supports both interactive mode (REPL) and single command execution.
  */
 
+// Load environment variables from .env file
+import 'dotenv/config';
+
 import { CommandRouter } from './CommandRouter';
 import { CommandParser } from './CommandParser';
 import { HelpCommand } from './commands/HelpCommand';
 import { VersionCommand } from './commands/VersionCommand';
 import { InitCommand } from './commands/InitCommand';
+import { RLMCommand } from './commands/RLMCommand';
+import { AgentFactoryCommand } from './commands/AgentFactoryCommand';
+import { StatusCommand } from './commands/StatusCommand';
+import { HistoryCommand } from './commands/HistoryCommand';
 import { InteractiveMode } from './InteractiveMode';
+import { Orchestrator } from '../orchestrator/Orchestrator';
+import { UOCS } from '../history/UOCS';
 import { SessionManager } from './session/SessionManager';
 import { PersonaManager } from '../persona/PersonaManager';
 import { HookEventEmitter } from '../hooks/event-emitter';
+import { ConfigManager } from '../config/ConfigManager';
 
 /**
  * Create and configure the command router with all commands
@@ -23,9 +33,25 @@ import { HookEventEmitter } from '../hooks/event-emitter';
 function createRouter(): CommandRouter {
   const router = new CommandRouter();
 
+  const config = new ConfigManager().load();
+
+  const orchestrator = new Orchestrator({
+    maxConcurrentTasks: config.orchestrator.maxConcurrentTasks,
+    defaultTimeout: config.orchestrator.defaultTimeout,
+    llmProvider: config.llm.provider,
+    llmModel: config.llm.model,
+    memoryBasePath: config.memory.baseDir,
+  });
+
+  const uocs = new UOCS();
+
   router.register('help', new HelpCommand());
   router.register('version', new VersionCommand());
   router.register('init', new InitCommand());
+  router.register('rlm', new RLMCommand());
+  router.register('agent', new AgentFactoryCommand());
+  router.register('status', new StatusCommand(orchestrator));
+  router.register('history', new HistoryCommand(uocs));
 
   return router;
 }

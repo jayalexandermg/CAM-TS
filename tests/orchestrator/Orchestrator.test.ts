@@ -32,8 +32,8 @@ describe('Orchestrator', () => {
       expect(config.maxConcurrentTasks).toBe(5);
       expect(config.defaultTimeout).toBe(300000);
       expect(config.enableLogging).toBe(true);
-      expect(config.llmProvider).toBe('mock');
-      expect(config.llmModel).toBe('mock-model');
+      expect(config.llmProvider).toBe('anthropic');
+      expect(config.llmModel).toBe('claude-opus-4-5-20251101');
 
       await orc.shutdown();
     });
@@ -43,7 +43,7 @@ describe('Orchestrator', () => {
         maxConcurrentTasks: 10,
         defaultTimeout: 60000,
         enableLogging: false,
-        llmProvider: 'custom',
+        llmProvider: 'mock',
         llmModel: 'custom-model',
       });
 
@@ -51,7 +51,7 @@ describe('Orchestrator', () => {
       expect(config.maxConcurrentTasks).toBe(10);
       expect(config.defaultTimeout).toBe(60000);
       expect(config.enableLogging).toBe(false);
-      expect(config.llmProvider).toBe('custom');
+      expect(config.llmProvider).toBe('mock');
       expect(config.llmModel).toBe('custom-model');
 
       await orc.shutdown();
