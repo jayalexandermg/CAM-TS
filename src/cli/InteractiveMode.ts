@@ -49,6 +49,13 @@ export interface InteractiveModeOptions {
  * - SessionStart hook integration
  * - Command history with transcripts, learnings, and decisions
  */
+/**
+ * Interaction mode for CAM
+ * - 'ideation': Natural conversation with persona, no task execution
+ * - 'execution': Full orchestration with agent spawning and task execution
+ */
+export type InteractionMode = 'ideation' | 'execution';
+
 export class InteractiveMode {
   private readonly router: CommandRouter;
   private readonly sessionManager: SessionManager;
@@ -62,6 +69,7 @@ export class InteractiveMode {
   private isRunning: boolean = false;
   private sessionStartHook?: SessionStartHook;
   private uocsSessionStarted: boolean = false;
+  private interactionMode: InteractionMode = 'ideation';
 
   /**
    * Create a new InteractiveMode instance
@@ -240,6 +248,33 @@ export class InteractiveMode {
       return;
     }
 
+    // Handle mode switching
+    if (input === '/chat' || input === '/ideate') {
+      this.setMode('ideation');
+      this.options.outputFn('\nSwitched to ideation mode - natural conversation with CAM');
+      this.options.outputFn('Use /do or /execute to switch to execution mode\n');
+      return;
+    }
+
+    if (input === '/do' || input === '/execute') {
+      this.setMode('execution');
+      this.options.outputFn('\nSwitched to execution mode - CAM will orchestrate agents to execute tasks');
+      this.options.outputFn('Use /chat or /ideate to switch to ideation mode\n');
+      return;
+    }
+
+    // Handle mode query
+    if (input === '/mode') {
+      this.options.outputFn(`\nCurrent mode: ${this.interactionMode}`);
+      this.options.outputFn(
+        this.interactionMode === 'ideation'
+          ? 'In ideation mode - conversing naturally'
+          : 'In execution mode - orchestrating agents'
+      );
+      this.options.outputFn('');
+      return;
+    }
+
     // Handle persona switching
     if (input.startsWith('persona ')) {
       await this.handlePersonaSwitch(input.substring(8).trim());
@@ -271,17 +306,9 @@ export class InteractiveMode {
       // Add to session history
       this.session?.addTurn(input, result.output || result.error || '');
     } catch (error) {
-      // If command not found, process through orchestrator as natural language
+      // If command not found, process based on current mode
       if (error instanceof CommandNotFoundError && this.session) {
-        try {
-          const response = await this.bridge.processInput(input, this.session);
-          this.options.outputFn(`\n${response}\n`);
-        } catch (bridgeError) {
-          const bridgeMessage =
-            bridgeError instanceof Error ? bridgeError.message : String(bridgeError);
-          this.options.outputFn(`Error: ${bridgeMessage}`);
-          this.session?.addTurn(input, `Error: ${bridgeMessage}`);
-        }
+        await this.processNaturalLanguage(input);
       } else {
         const message = error instanceof Error ? error.message : String(error);
         this.options.outputFn(`Error: ${message}`);
@@ -289,6 +316,63 @@ export class InteractiveMode {
         this.session?.addTurn(input, `Error: ${message}`);
       }
     }
+  }
+
+  /**
+   * Process natural language input based on current mode
+   */
+  private async processNaturalLanguage(input: string): Promise<void> {
+    if (!this.session) return;
+
+    try {
+      if (this.interactionMode === 'ideation') {
+        // Ideation mode: Stream response for real-time conversation feel
+        const output = this.options.output as NodeJS.WritableStream;
+        const isStreamable = output && typeof (output as { write?: unknown }).write === 'function';
+
+        if (isStreamable) {
+          (output as NodeJS.WritableStream).write('\n');
+          const response = await this.bridge.processIdeationStreaming(
+            input,
+            this.session,
+            (chunk: string) => {
+              (output as NodeJS.WritableStream).write(chunk);
+            }
+          );
+          (output as NodeJS.WritableStream).write('\n\n');
+          this.session.addTurn(input, response);
+        } else {
+          // Fallback to non-streaming
+          const response = await this.bridge.processIdeation(input, this.session);
+          this.options.outputFn(`\n${response}\n`);
+          this.session.addTurn(input, response);
+        }
+      } else {
+        // Execution mode: Full orchestration with agents
+        const response = await this.bridge.processInput(input, this.session);
+        this.options.outputFn(`\n${response}\n`);
+        this.session.addTurn(input, response);
+      }
+    } catch (bridgeError) {
+      const bridgeMessage =
+        bridgeError instanceof Error ? bridgeError.message : String(bridgeError);
+      this.options.outputFn(`Error: ${bridgeMessage}`);
+      this.session.addTurn(input, `Error: ${bridgeMessage}`);
+    }
+  }
+
+  /**
+   * Set the interaction mode
+   */
+  setMode(mode: InteractionMode): void {
+    this.interactionMode = mode;
+  }
+
+  /**
+   * Get the current interaction mode
+   */
+  getMode(): InteractionMode {
+    return this.interactionMode;
   }
 
   /**

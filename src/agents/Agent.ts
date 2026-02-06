@@ -5,6 +5,7 @@ import {
   AgentStatus,
   AgentResult,
   AgentDefinition,
+  ExecutionContext,
 } from './types';
 
 export class Agent extends EventEmitter {
@@ -73,28 +74,114 @@ export class Agent extends EventEmitter {
     });
   }
 
-  async execute(task: string): Promise<AgentResult> {
+  /**
+   * Execute a task with the provided context
+   *
+   * Runs an agentic tool loop: repeatedly calls the LLM and executes
+   * tools until the task is complete or max iterations is reached.
+   *
+   * @param task - The task description/user message
+   * @param context - Execution context with tools, LLM client, and system prompt
+   * @returns AgentResult with execution details
+   */
+  async execute(task: string, context?: ExecutionContext): Promise<AgentResult> {
     await this.start(task);
 
     try {
-      // This will be implemented by orchestrator
-      // For now, just return a placeholder
-      const result: AgentResult = {
-        success: true,
-        data: { message: 'Agent execution placeholder' },
-        metadata: {
-          duration: 0,
-          retries: this.state.retryCount,
-          skillsUsed: [],
-        },
-      };
+      // If no context provided, return simple placeholder (for backward compatibility)
+      if (!context) {
+        const result: AgentResult = {
+          success: true,
+          data: { message: 'No execution context provided' },
+          metadata: {
+            duration: this.getDuration() || 0,
+            retries: this.state.retryCount,
+            skillsUsed: [],
+          },
+        };
+        await this.complete(result);
+        return result;
+      }
 
-      await this.complete(result);
-      return result;
+      // Build agent-specific system prompt
+      const agentSystemPrompt = this.buildAgentPrompt(context.systemPrompt);
+
+      // Check if we have tools available
+      if (context.toolDefinitions.length > 0) {
+        // Execute with tool loop
+        const loopResult = await context.llmClient.executeToolLoop(
+          agentSystemPrompt,
+          task,
+          context.toolDefinitions,
+          context.toolExecutor,
+          { maxIterations: 10 }
+        );
+
+        // Extract skills used from tool calls
+        const skillsUsed: string[] = loopResult.toolUses.map(
+          (tu: { request: { name: string } }) => tu.request.name
+        );
+        const uniqueSkills: string[] = Array.from(new Set(skillsUsed));
+
+        const result: AgentResult = {
+          success: loopResult.success,
+          data: {
+            response: loopResult.finalResponse,
+            toolUses: loopResult.toolUses,
+            iterations: loopResult.iterations,
+          },
+          error: loopResult.error ? new Error(loopResult.error) : undefined,
+          metadata: {
+            duration: this.getDuration() || 0,
+            retries: this.state.retryCount,
+            skillsUsed: uniqueSkills,
+            toolUses: loopResult.toolUses.length,
+            totalTokens: loopResult.totalTokens.total,
+          },
+        };
+
+        await this.complete(result);
+        return result;
+      } else {
+        // No tools - simple chat completion
+        const response = await context.llmClient.chat(agentSystemPrompt, task, []);
+
+        const result: AgentResult = {
+          success: true,
+          data: { response },
+          metadata: {
+            duration: this.getDuration() || 0,
+            retries: this.state.retryCount,
+            skillsUsed: [],
+          },
+        };
+
+        await this.complete(result);
+        return result;
+      }
     } catch (error) {
       await this.fail(error as Error);
       throw error;
     }
+  }
+
+  /**
+   * Build agent-specific system prompt
+   */
+  private buildAgentPrompt(basePrompt: string): string {
+    const definition = this.state.definition;
+
+    return `${basePrompt}
+
+## Agent Profile
+Name: ${definition.name}
+Description: ${definition.description}
+Expertise: ${definition.expertise.join(', ')}
+Communication Style: ${definition.communicationStyle}
+Approach: ${definition.approach}
+
+You have access to skills: ${definition.availableSkills.join(', ') || 'none'}
+${definition.constraints?.length ? `Constraints: ${definition.constraints.join(', ')}` : ''}`;
   }
 
   async complete(result: AgentResult): Promise<void> {

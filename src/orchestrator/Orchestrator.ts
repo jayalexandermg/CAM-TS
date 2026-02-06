@@ -14,12 +14,22 @@ import { ErrorHandler } from './errors/ErrorHandler';
 import { SecurityManager } from './security/SecurityManager';
 import { AgentSpawner } from '../agents/AgentSpawner';
 import { Agent } from '../agents/Agent';
+import { ExecutionContext } from '../agents/types';
 import { BASE_AGENTS } from '../agents/definitions/base-agents';
 import { LLMClient } from './llm/LLMClient';
+import { ToolDefinition } from './llm/ToolSchema';
 import { UOCS } from '../history/UOCS';
 import { PostToolUseHook } from '../hooks/PostToolUseHook';
 import { StopHook } from '../hooks/StopHook';
 import { SubagentStopHook } from '../hooks/SubagentStopHook';
+import { SkillManager } from '../skills/SkillManager';
+import { SkillRouter } from '../skills/SkillRouter';
+import { SkillActivator } from '../skills/SkillActivator';
+import { SkillExecutor } from '../skills/SkillExecutor';
+import { IntentMatcher } from '../skills/IntentMatcher';
+import { CoreManager } from '../memory/core/CoreManager';
+import { PrepromptInjector } from '../context/PrepromptInjector';
+import { PrepromptHydrator } from '../context/PrepromptHydrator';
 
 /**
  * Dependencies that can be injected into the Orchestrator
@@ -30,6 +40,8 @@ export interface OrchestratorDependencies {
   securityManager?: SecurityManager;
   agentSpawner?: AgentSpawner;
   llmClient?: LLMClient;
+  skillActivator?: SkillActivator;
+  skillExecutor?: SkillExecutor;
 }
 
 export class Orchestrator extends EventEmitter {
@@ -39,6 +51,8 @@ export class Orchestrator extends EventEmitter {
   private securityManager: SecurityManager;
   private agentSpawner: AgentSpawner;
   private llmClient: LLMClient;
+  private skillActivator: SkillActivator | null;
+  private skillExecutor: SkillExecutor | null;
   private startTime: Date;
   private uocs: UOCS;
   private postToolUseHook: PostToolUseHook;
@@ -73,6 +87,17 @@ export class Orchestrator extends EventEmitter {
         provider: this.config.llmProvider!,
         model: this.config.llmModel!,
       });
+
+    // Initialize skill system (use injected or build from config)
+    if (dependencies?.skillActivator && dependencies?.skillExecutor) {
+      this.skillActivator = dependencies.skillActivator;
+      this.skillExecutor = dependencies.skillExecutor;
+    } else {
+      // Build the skill chain from config
+      const { activator, executor } = this.buildSkillChain(this.config.memoryBasePath!);
+      this.skillActivator = activator;
+      this.skillExecutor = executor;
+    }
 
     // Initialize UOCS and hooks
     this.uocs = new UOCS();
@@ -199,28 +224,30 @@ export class Orchestrator extends EventEmitter {
     task.metadata.agentId = agent.getId();
 
     try {
-      // Start the agent
-      await agent.start(request.input);
+      // Activate relevant skill based on request content
+      await this.activateSkillForRequest(request);
 
-      // Build context
-      const context = this.buildContext(request, agent);
+      // Build execution context with tools and LLM client
+      const executionContext = this.buildExecutionContext(request, agent);
 
-      // Execute via LLM
-      const response = await this.llmClient.chat(context.systemPrompt, request.input, []);
-
-      // Complete agent
-      await agent.complete({
-        success: true,
-        data: { response },
-      });
+      // Execute via agent's tool loop
+      const agentResult = await agent.execute(request.input, executionContext);
 
       this.securityManager.trackAgentCompleted();
+
+      // Extract response from agent result
+      const response =
+        typeof agentResult.data === 'object' && agentResult.data !== null
+          ? (agentResult.data as { response?: string }).response || JSON.stringify(agentResult.data)
+          : String(agentResult.data || '');
 
       return {
         output: response,
         data: {
           agentId: agent.getId(),
           skillId: request.options?.preferredSkill,
+          toolUses: agentResult.metadata?.toolUses,
+          skillsUsed: agentResult.metadata?.skillsUsed,
         },
         metadata: {
           ...task.metadata,
@@ -253,25 +280,131 @@ export class Orchestrator extends EventEmitter {
     return skillAgentMap[skillId] || 'default';
   }
 
-  private buildContext(request: TaskRequest, agent: Agent): { systemPrompt: string } {
-    // Get agent definition
-    const definition = agent.getDefinition();
+  /**
+   * Build execution context for agent
+   *
+   * Creates the full ExecutionContext with system prompt, tools,
+   * tool executor, and LLM client for the agent to use.
+   */
+  private buildExecutionContext(request: TaskRequest, agent: Agent): ExecutionContext {
+    // Build base system prompt
+    const systemPrompt = this.buildSystemPrompt(request);
 
-    // Build system prompt
-    const systemPrompt = `
-## Agent Profile
-Name: ${definition.name}
-Description: ${definition.description}
-Expertise: ${definition.expertise.join(', ')}
-Communication Style: ${definition.communicationStyle}
-Approach: ${definition.approach}
+    // Get available tools (currently empty - will be populated when SkillActivator is wired)
+    const toolDefinitions = this.getAvailableTools(request);
+
+    // Create tool executor
+    const toolExecutor = this.createToolExecutor();
+
+    return {
+      systemPrompt,
+      toolDefinitions,
+      toolExecutor,
+      // Cast LLMClient to LLMClientRef (interface is compatible)
+      llmClient: this.llmClient as unknown as ExecutionContext['llmClient'],
+      sessionId: request.sessionId,
+      contextData: request.context,
+    };
+  }
+
+  /**
+   * Build system prompt with context
+   */
+  private buildSystemPrompt(request: TaskRequest): string {
+    const basePrompt = `You are CAM, an AI orchestrator and personal assistant.
 
 ## Task Context
 Session: ${request.sessionId}
 ${request.context ? `Additional Context: ${JSON.stringify(request.context)}` : ''}
-`.trim();
 
-    return { systemPrompt };
+When you need to perform actions, use the available tools. Think step by step about what needs to be done.`;
+
+    return basePrompt;
+  }
+
+  /**
+   * Get available tool definitions from active skills
+   *
+   * Pulls tool definitions from SkillExecutor which combines
+   * registered tools with tools from active skills via SkillActivator.
+   */
+  private getAvailableTools(_request: TaskRequest): ToolDefinition[] {
+    if (!this.skillExecutor) {
+      return [];
+    }
+    return this.skillExecutor.getAvailableToolDefinitions();
+  }
+
+  /**
+   * Create tool executor function using SkillExecutor
+   *
+   * Returns a function that routes tool calls through the SkillExecutor,
+   * which handles both registered custom tools and skill-provided tools.
+   */
+  private createToolExecutor(): ExecutionContext['toolExecutor'] {
+    if (!this.skillExecutor) {
+      return async (name: string) => ({
+        success: false,
+        result: `Skill system not initialized, cannot execute tool: ${name}`,
+        error: 'Skill system not initialized',
+      });
+    }
+    return this.skillExecutor.createToolExecutor();
+  }
+
+  /**
+   * Build the skill system dependency chain
+   *
+   * SkillManager → IntentMatcher → SkillRouter
+   * CoreManager + PrepromptInjector → PrepromptHydrator
+   * All of the above → SkillActivator → SkillExecutor
+   */
+  private buildSkillChain(
+    memoryBasePath: string
+  ): { activator: SkillActivator | null; executor: SkillExecutor | null } {
+    try {
+      const skillManager = new SkillManager(memoryBasePath);
+      const coreManager = new CoreManager(memoryBasePath);
+      const prepromptInjector = new PrepromptInjector();
+      const prepromptHydrator = new PrepromptHydrator(coreManager, skillManager, prepromptInjector);
+      const intentMatcher = new IntentMatcher(skillManager);
+      const skillRouter = new SkillRouter(intentMatcher);
+      const activator = new SkillActivator(skillManager, skillRouter, prepromptHydrator);
+      const executor = new SkillExecutor(activator);
+      return { activator, executor };
+    } catch {
+      // Skill system initialization failed - non-fatal, orchestrator can still work
+      return { activator: null, executor: null };
+    }
+  }
+
+  /**
+   * Activate a skill based on the task request
+   *
+   * Uses SkillActivator to route the request to the most relevant skill
+   * and activate it, making its tools available for the agent.
+   */
+  private async activateSkillForRequest(request: TaskRequest): Promise<void> {
+    if (!this.skillActivator) {
+      return;
+    }
+
+    try {
+      await this.skillActivator.activateFromRequest(request.input, {
+        preferredSkill: request.options?.preferredSkill,
+        minConfidence: 0.3,
+      });
+    } catch {
+      // Skill activation failure is non-fatal - agent can still work without tools
+    }
+  }
+
+  getSkillActivator(): SkillActivator | null {
+    return this.skillActivator;
+  }
+
+  getSkillExecutor(): SkillExecutor | null {
+    return this.skillExecutor;
   }
 
   getState(): OrchestratorState {

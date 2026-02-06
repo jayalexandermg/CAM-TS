@@ -8,6 +8,7 @@
 import { Orchestrator } from '../orchestrator/Orchestrator';
 import { TaskRequest } from '../orchestrator/types';
 import { Session } from './session/Session';
+import { StreamCallback } from '../orchestrator/llm/types';
 
 /**
  * Bridge between CLI and Orchestrator
@@ -68,6 +69,106 @@ export class OrchestratorBridge {
 
       return errorOutput;
     }
+  }
+
+  /**
+   * Process input in ideation mode
+   *
+   * Direct conversation with the LLM using persona context,
+   * without full task orchestration or agent spawning.
+   * This is for natural brainstorming/ideation conversations.
+   *
+   * @param input - User input string
+   * @param session - Current session
+   * @returns Response string
+   */
+  async processIdeation(input: string, session: Session): Promise<string> {
+    const llmClient = this.orchestrator.getLLMClient();
+
+    // Build a conversational system prompt
+    const persona = session.getPersona();
+    const history = session.getHistory();
+
+    const systemPrompt = this.buildIdeationPrompt(persona);
+
+    // Convert recent history to LLM messages
+    const recentHistory = history.slice(-10).flatMap((turn) => [
+      { role: 'user' as const, content: turn.input },
+      { role: 'assistant' as const, content: turn.output },
+    ]);
+
+    try {
+      const response = await llmClient.chat(systemPrompt, input, recentHistory);
+      return response;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      return `[Ideation Error] ${errorMessage}`;
+    }
+  }
+
+  /**
+   * Process ideation input with streaming output
+   *
+   * Streams LLM response chunks through the callback as they arrive,
+   * giving the user real-time feedback during conversation.
+   *
+   * @param input - User input string
+   * @param session - Current session
+   * @param onChunk - Callback for each streamed chunk
+   * @returns Full response string
+   */
+  async processIdeationStreaming(
+    input: string,
+    session: Session,
+    onChunk: (text: string) => void
+  ): Promise<string> {
+    const llmClient = this.orchestrator.getLLMClient();
+    const persona = session.getPersona();
+    const history = session.getHistory();
+    const systemPrompt = this.buildIdeationPrompt(persona);
+
+    const recentHistory = history.slice(-10).flatMap((turn) => [
+      { role: 'user' as const, content: turn.input },
+      { role: 'assistant' as const, content: turn.output },
+    ]);
+
+    const streamCallback: StreamCallback = (chunk) => {
+      if (chunk.type === 'text' && chunk.content) {
+        onChunk(chunk.content);
+      }
+    };
+
+    try {
+      const response = await llmClient.chatStream(
+        systemPrompt,
+        input,
+        recentHistory,
+        streamCallback
+      );
+      return response;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      return `[Ideation Error] ${errorMessage}`;
+    }
+  }
+
+  /**
+   * Build system prompt for ideation mode
+   */
+  private buildIdeationPrompt(persona?: string): string {
+    const basePrompt = `You are CAM, an AI cofounder and personal assistant. You're in ideation mode - having a natural conversation to brainstorm, strategize, and work through ideas together.
+
+Be conversational, collaborative, and thoughtful. Ask clarifying questions when needed. Help explore ideas from multiple angles.
+
+When the user is ready to execute on an idea, they can switch to execution mode with /do or /execute.`;
+
+    if (persona) {
+      return `${basePrompt}
+
+Current persona context: ${persona}`;
+    }
+
+    return basePrompt;
   }
 
   /**

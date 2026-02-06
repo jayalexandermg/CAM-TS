@@ -16,6 +16,7 @@ import {
   ActivationOptions,
 } from './types';
 import { MemoryError, ErrorCodes } from '../exceptions';
+import { ToolDefinition, ToolInputSchema } from '../orchestrator/llm/ToolSchema';
 
 /**
  * Default minimum confidence for automatic activation
@@ -340,6 +341,124 @@ export class SkillActivator {
       tools.push(...activeSkill.tools);
     }
     return tools;
+  }
+
+  /**
+   * Get tool definitions for all active skills
+   *
+   * Converts active skill tools into Anthropic ToolDefinition format
+   * for use with LLM tool calling.
+   *
+   * @returns Array of ToolDefinition objects
+   */
+  getToolDefinitions(): ToolDefinition[] {
+    const definitions: ToolDefinition[] = [];
+
+    for (const activeSkill of this.activeSkills.values()) {
+      for (const toolPath of activeSkill.tools) {
+        const toolName = this.extractToolName(toolPath);
+        const definition = this.buildToolDefinition(toolName, toolPath, activeSkill);
+        definitions.push(definition);
+      }
+    }
+
+    return definitions;
+  }
+
+  /**
+   * Extract tool name from file path
+   */
+  private extractToolName(toolPath: string): string {
+    const fileName = toolPath.split('/').pop() || toolPath;
+    return fileName.replace(/\.(ts|js|json)$/, '');
+  }
+
+  /**
+   * Build a ToolDefinition from skill tool info
+   */
+  private buildToolDefinition(
+    toolName: string,
+    toolPath: string,
+    activeSkill: ActiveSkill
+  ): ToolDefinition {
+    // Build description from skill context
+    const skillName = activeSkill.skill.name;
+    const skillDescription = activeSkill.skill.definition?.description || '';
+
+    return {
+      name: toolName,
+      description: `Tool from ${skillName} skill. ${skillDescription}`.trim(),
+      input_schema: this.buildDefaultInputSchema(toolName),
+    };
+  }
+
+  /**
+   * Build a default input schema for a tool
+   *
+   * In a full implementation, this would read the tool's actual schema
+   */
+  private buildDefaultInputSchema(toolName: string): ToolInputSchema {
+    const toolLower = toolName.toLowerCase();
+
+    // Common tool patterns
+    if (toolLower.includes('search') || toolLower.includes('find')) {
+      return {
+        type: 'object',
+        properties: {
+          query: {
+            type: 'string',
+            description: 'The search query',
+          },
+          limit: {
+            type: 'number',
+            description: 'Maximum number of results',
+          },
+        },
+        required: ['query'],
+      };
+    }
+
+    if (toolLower.includes('read') || toolLower.includes('get')) {
+      return {
+        type: 'object',
+        properties: {
+          path: {
+            type: 'string',
+            description: 'Path to the resource',
+          },
+        },
+        required: ['path'],
+      };
+    }
+
+    if (toolLower.includes('write') || toolLower.includes('create')) {
+      return {
+        type: 'object',
+        properties: {
+          path: {
+            type: 'string',
+            description: 'Path to write to',
+          },
+          content: {
+            type: 'string',
+            description: 'Content to write',
+          },
+        },
+        required: ['path', 'content'],
+      };
+    }
+
+    // Default generic schema
+    return {
+      type: 'object',
+      properties: {
+        input: {
+          type: 'string',
+          description: 'Input for the tool',
+        },
+      },
+      required: [],
+    };
   }
 
   // =========================================================================
