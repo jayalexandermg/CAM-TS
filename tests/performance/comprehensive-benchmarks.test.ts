@@ -8,11 +8,11 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
-import { BenchmarkRunner, BenchmarkReport, DEFAULT_PERFORMANCE_TARGETS } from '../../src/benchmarks';
+import { BenchmarkRunner, DEFAULT_PERFORMANCE_TARGETS } from '../../src/benchmarks';
 import { ParallelSpawner } from '../../src/agents/parallel/ParallelSpawner';
 import { AgentSpawner } from '../../src/agents/AgentSpawner';
 import { AgentConfig, AgentDefinition } from '../../src/agents/types';
-import { MemoryPipeline, MemoryTier } from '../../src/memory/pipeline/MemoryPipeline';
+import { MemoryPipeline } from '../../src/memory/pipeline/MemoryPipeline';
 import { IntentRouter } from '../../src/skills/routing/IntentRouter';
 import { SkillRegistry, SkillDefinition } from '../../src/skills/routing/SkillRegistry';
 import { TraitInference } from '../../src/agents/factory/TraitInference';
@@ -26,7 +26,7 @@ describe('Performance: Comprehensive Benchmarks', () => {
   jest.setTimeout(120000);
 
   let runner: BenchmarkRunner;
-  let tempDirs: string[] = [];
+  const tempDirs: string[] = [];
 
   // Helper: create test agent definition
   const createTestDefinition = (name: string): AgentDefinition => ({

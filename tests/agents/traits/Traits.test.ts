@@ -56,7 +56,7 @@ describe('Traits System Foundation', () => {
     });
 
     it('should have name and description for each expertise', () => {
-      Object.entries(traitsData.expertise).forEach(([key, trait]) => {
+      Object.entries(traitsData.expertise).forEach(([_key, trait]) => {
         expect(trait).toHaveProperty('name');
         expect(trait).toHaveProperty('description');
         expect(typeof trait.name).toBe('string');
@@ -65,7 +65,7 @@ describe('Traits System Foundation', () => {
     });
 
     it('should have keywords as arrays for each expertise', () => {
-      Object.entries(traitsData.expertise).forEach(([key, trait]) => {
+      Object.entries(traitsData.expertise).forEach(([_key, trait]) => {
         expect(trait).toHaveProperty('keywords');
         expect(Array.isArray(trait.keywords)).toBe(true);
         expect(trait.keywords!.length).toBeGreaterThan(0);
@@ -73,7 +73,7 @@ describe('Traits System Foundation', () => {
     });
 
     it('should have prompt_fragment for each expertise', () => {
-      Object.entries(traitsData.expertise).forEach(([key, trait]) => {
+      Object.entries(traitsData.expertise).forEach(([_key, trait]) => {
         expect(trait).toHaveProperty('prompt_fragment');
         expect(typeof trait.prompt_fragment).toBe('string');
         expect(trait.prompt_fragment!.length).toBeGreaterThan(0);
@@ -98,7 +98,7 @@ describe('Traits System Foundation', () => {
     });
 
     it('should have name and description for each personality', () => {
-      Object.entries(traitsData.personality).forEach(([key, trait]) => {
+      Object.entries(traitsData.personality).forEach(([_key, trait]) => {
         expect(trait).toHaveProperty('name');
         expect(trait).toHaveProperty('description');
         expect(typeof trait.name).toBe('string');
@@ -107,7 +107,7 @@ describe('Traits System Foundation', () => {
     });
 
     it('should have prompt_fragment for each personality', () => {
-      Object.entries(traitsData.personality).forEach(([key, trait]) => {
+      Object.entries(traitsData.personality).forEach(([_key, trait]) => {
         expect(trait).toHaveProperty('prompt_fragment');
         expect(typeof trait.prompt_fragment).toBe('string');
         expect(trait.prompt_fragment!.length).toBeGreaterThan(0);
@@ -132,7 +132,7 @@ describe('Traits System Foundation', () => {
     });
 
     it('should have name and description for each approach', () => {
-      Object.entries(traitsData.approach).forEach(([key, trait]) => {
+      Object.entries(traitsData.approach).forEach(([_key, trait]) => {
         expect(trait).toHaveProperty('name');
         expect(trait).toHaveProperty('description');
         expect(typeof trait.name).toBe('string');
@@ -141,7 +141,7 @@ describe('Traits System Foundation', () => {
     });
 
     it('should have prompt_fragment for each approach', () => {
-      Object.entries(traitsData.approach).forEach(([key, trait]) => {
+      Object.entries(traitsData.approach).forEach(([_key, trait]) => {
         expect(trait).toHaveProperty('prompt_fragment');
         expect(typeof trait.prompt_fragment).toBe('string');
         expect(trait.prompt_fragment!.length).toBeGreaterThan(0);
@@ -166,7 +166,7 @@ describe('Traits System Foundation', () => {
     });
 
     it('should have description and traits array for each example', () => {
-      Object.entries(traitsData.examples).forEach(([key, example]) => {
+      Object.entries(traitsData.examples).forEach(([_key, example]) => {
         expect(example).toHaveProperty('description');
         expect(example).toHaveProperty('traits');
         expect(typeof example.description).toBe('string');
@@ -182,7 +182,7 @@ describe('Traits System Foundation', () => {
         ...Object.keys(traitsData.approach),
       ]);
 
-      Object.entries(traitsData.examples).forEach(([key, example]) => {
+      Object.entries(traitsData.examples).forEach(([_key, example]) => {
         example.traits.forEach(traitName => {
           expect(allTraitNames.has(traitName)).toBe(true);
         });

@@ -8,13 +8,7 @@
 import { SkillManager } from './SkillManager';
 import { SkillRouter } from './SkillRouter';
 import { PrepromptHydrator, SkillAgentContext } from '../context';
-import {
-  Skill,
-  SkillContext,
-  ActiveSkill,
-  ActivationResult,
-  ActivationOptions,
-} from './types';
+import { Skill, SkillContext, ActiveSkill, ActivationResult, ActivationOptions } from './types';
 import { MemoryError, ErrorCodes } from '../exceptions';
 import { ToolDefinition, ToolInputSchema } from '../orchestrator/llm/ToolSchema';
 
@@ -129,11 +123,9 @@ export class SkillActivator {
     // Get the skill from SkillManager
     const skill = this.skillManager.getSkill(skillName);
     if (!skill) {
-      throw new MemoryError(
-        `Skill not found: ${skillName}`,
-        ErrorCodes.FILE_NOT_FOUND,
-        { skillName }
-      );
+      throw new MemoryError(`Skill not found: ${skillName}`, ErrorCodes.FILE_NOT_FOUND, {
+        skillName,
+      });
     }
 
     // Check if skill is already active
@@ -274,11 +266,9 @@ export class SkillActivator {
   async updateSkillContext(skillName: string, context: SkillContext): Promise<void> {
     const activeSkill = this.activeSkills.get(skillName);
     if (!activeSkill) {
-      throw new MemoryError(
-        `Skill is not active: ${skillName}`,
-        ErrorCodes.VALIDATION_FAILED,
-        { skillName }
-      );
+      throw new MemoryError(`Skill is not active: ${skillName}`, ErrorCodes.VALIDATION_FAILED, {
+        skillName,
+      });
     }
 
     // Load updated context

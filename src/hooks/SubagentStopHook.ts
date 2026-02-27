@@ -57,7 +57,7 @@ export class SubagentStopHook implements Hook {
         role: 'system',
         content: `Subagent ${context.agentId} completed: ${context.result.success ? 'success' : 'failed'}`,
         timestamp: new Date(),
-        agentId: context.agentId
+        agentId: context.agentId,
       });
 
       // Capture result as output
@@ -67,12 +67,12 @@ export class SubagentStopHook implements Hook {
           subagentId: context.agentId,
           parentAgentId: context.parentAgentId,
           task: context.taskDescription,
-          result: context.result
+          result: context.result,
         }),
         context.agentId,
         {
           type: 'subagent_completion',
-          success: context.result.success
+          success: context.result.success,
         }
       );
 
@@ -87,14 +87,14 @@ export class SubagentStopHook implements Hook {
         data: {
           subagentId: context.agentId,
           parentAgentId: context.parentAgentId,
-          resultSuccess: context.result.success
-        }
+          resultSuccess: context.result.success,
+        },
       };
     } catch (error) {
       return {
         success: false,
         duration: Date.now() - startTime,
-        error: error as Error
+        error: error as Error,
       };
     }
   }

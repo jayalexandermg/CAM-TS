@@ -7,12 +7,7 @@
  */
 
 import * as crypto from 'crypto';
-import {
-  ObservabilityEvent,
-  ObservabilityEventType,
-  EventMetadata,
-  SystemMetrics,
-} from '../types';
+import { ObservabilityEvent, ObservabilityEventType, EventMetadata, SystemMetrics } from '../types';
 import {
   AuditStorage,
   JsonlAuditStorage,

@@ -5,7 +5,6 @@
  */
 
 import { BenchmarkRunner } from '../../src/benchmarks/BenchmarkRunner';
-import { MemoryScaffold } from '../../src/memory/scaffold';
 import { MemoryPipeline, MemoryTier } from '../../src/memory/pipeline/MemoryPipeline';
 import {
   createTempMemoryScaffold,

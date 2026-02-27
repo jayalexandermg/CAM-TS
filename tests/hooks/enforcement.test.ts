@@ -453,7 +453,7 @@ describe('HookEventEmitter enforcement', () => {
     it('should accumulate MODIFY results', async () => {
       const modifier1 = new ModifyHandler({ step1: true });
       const modifier2 = new ModifyHandler({ step2: true });
-      (modifier2 as any).name = 'modify-handler-2';
+      (modifier2 as unknown as { name: string }).name = 'modify-handler-2';
       emitter.registerHandler(modifier1);
       emitter.registerHandler(modifier2);
 

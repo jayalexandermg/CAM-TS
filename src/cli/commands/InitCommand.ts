@@ -52,9 +52,7 @@ export class InitCommand extends BaseCommandHandler {
 
       return this.success('CAM initialized successfully');
     } catch (error) {
-      return this.failure(
-        error instanceof Error ? error.message : String(error)
-      );
+      return this.failure(error instanceof Error ? error.message : String(error));
     }
   }
 
@@ -115,10 +113,7 @@ export class InitCommand extends BaseCommandHandler {
     );
 
     // ACTIVE_PROJECTS.md
-    await fs.writeFile(
-      path.join(coreDir, 'ACTIVE_PROJECTS.md'),
-      '# ACTIVE PROJECTS\n\n'
-    );
+    await fs.writeFile(path.join(coreDir, 'ACTIVE_PROJECTS.md'), '# ACTIVE PROJECTS\n\n');
   }
 
   private async createDefaultPersonas(camDir: string): Promise<void> {
@@ -136,33 +131,17 @@ export class InitCommand extends BaseCommandHandler {
       {
         name: 'researcher',
         description: 'Research specialist - curious and thorough',
-        personality: [
-          'Curious',
-          'Analytical',
-          'Detail-oriented',
-          'Evidence-based',
-        ],
+        personality: ['Curious', 'Analytical', 'Detail-oriented', 'Evidence-based'],
         communicationStyle: 'Inquisitive and thorough',
         expertise: ['Research methodology', 'Data analysis', 'Source evaluation'],
-        approach:
-          'Break problems into searchable questions, validate sources, synthesize findings',
+        approach: 'Break problems into searchable questions, validate sources, synthesize findings',
       },
       {
         name: 'coder',
         description: 'Coding specialist - pragmatic and precise',
-        personality: [
-          'Pragmatic',
-          'Precise',
-          'Quality-focused',
-          'Best-practices oriented',
-        ],
+        personality: ['Pragmatic', 'Precise', 'Quality-focused', 'Best-practices oriented'],
         communicationStyle: 'Technical and direct',
-        expertise: [
-          'Software development',
-          'Code review',
-          'Architecture design',
-          'Testing',
-        ],
+        expertise: ['Software development', 'Code review', 'Architecture design', 'Testing'],
         approach: 'Write clean, tested, maintainable code following best practices',
       },
     ];

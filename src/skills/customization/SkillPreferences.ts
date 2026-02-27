@@ -36,10 +36,7 @@ export class SkillPreferencesManager {
   /**
    * Set user preferences for a skill
    */
-  async setPreferences(
-    skillName: string,
-    prefs: Partial<SkillPreferences>
-  ): Promise<void> {
+  async setPreferences(skillName: string, prefs: Partial<SkillPreferences>): Promise<void> {
     const existing = await this.loadUserPreferences(skillName);
     const updated = { ...existing, ...prefs };
 
@@ -144,10 +141,7 @@ export class SkillPreferencesManager {
   /**
    * Save user preferences to YAML file
    */
-  private async saveUserPreferences(
-    skillName: string,
-    prefs: SkillPreferences
-  ): Promise<void> {
+  private async saveUserPreferences(skillName: string, prefs: SkillPreferences): Promise<void> {
     const filePath = this.getPreferencesPath(skillName);
     const dir = path.dirname(filePath);
 

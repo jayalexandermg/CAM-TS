@@ -58,9 +58,7 @@ export class Agent extends EventEmitter {
 
   async start(task: string): Promise<void> {
     if (this.state.status !== 'idle') {
-      throw new Error(
-        `Agent ${this.state.id} is not idle (current status: ${this.state.status})`
-      );
+      throw new Error(`Agent ${this.state.id} is not idle (current status: ${this.state.status})`);
     }
 
     this.state.status = 'active';
@@ -216,9 +214,7 @@ ${definition.constraints?.length ? `Constraints: ${definition.constraints.join('
 
   async retry(): Promise<void> {
     if (this.state.retryCount >= this.state.maxRetries) {
-      throw new Error(
-        `Agent ${this.state.id} has exceeded max retries (${this.state.maxRetries})`
-      );
+      throw new Error(`Agent ${this.state.id} has exceeded max retries (${this.state.maxRetries})`);
     }
 
     this.state.retryCount++;

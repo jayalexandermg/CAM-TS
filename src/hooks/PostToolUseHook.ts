@@ -6,13 +6,7 @@
  */
 
 import { BaseHookHandler, BaseHookHandlerOptions } from './hook-handler';
-import {
-  HookEvent,
-  EventType,
-  PostToolUseEvent,
-  PostToolUseMetadata,
-  HookResult,
-} from './types';
+import { HookEvent, EventType, PostToolUseEvent, PostToolUseMetadata, HookResult } from './types';
 import { UOCS } from '../history/UOCS';
 
 // ============================================================================
@@ -162,11 +156,7 @@ export class PostToolUseHook extends BaseHookHandler {
 
       // Check for learnings in successful outputs
       let learningsExtracted = 0;
-      if (
-        this.enableLearningExtraction &&
-        metadata.success &&
-        metadata.toolOutput
-      ) {
+      if (this.enableLearningExtraction && metadata.success && metadata.toolOutput) {
         learningsExtracted = await this.extractLearnings(event, sessionId);
       }
 
@@ -246,10 +236,7 @@ export class PostToolUseHook extends BaseHookHandler {
    * @param sessionId - Session ID for learning storage
    * @returns Number of learnings extracted
    */
-  private async extractLearnings(
-    event: PostToolUseEvent,
-    sessionId: string
-  ): Promise<number> {
+  private async extractLearnings(event: PostToolUseEvent, sessionId: string): Promise<number> {
     const output = this.stringifyOutput(event.metadata.toolOutput);
     let learningsExtracted = 0;
 

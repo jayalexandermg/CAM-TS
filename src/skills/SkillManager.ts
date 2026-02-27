@@ -224,11 +224,9 @@ export class SkillManager {
         throw error;
       }
       const err = error as Error;
-      throw new MemoryError(
-        `Failed to load skills: ${err.message}`,
-        ErrorCodes.MEMORY_LOAD_ERROR,
-        { error: err.message }
-      );
+      throw new MemoryError(`Failed to load skills: ${err.message}`, ErrorCodes.MEMORY_LOAD_ERROR, {
+        error: err.message,
+      });
     }
   }
 
@@ -321,11 +319,7 @@ export class SkillManager {
   ): Promise<void> {
     // Validate skill name
     if (!name || name.trim() === '') {
-      throw new MemoryError(
-        'Skill name cannot be empty',
-        ErrorCodes.VALIDATION_FAILED,
-        { name }
-      );
+      throw new MemoryError('Skill name cannot be empty', ErrorCodes.VALIDATION_FAILED, { name });
     }
 
     // Validate name format (lowercase, hyphens, no spaces)
@@ -340,11 +334,7 @@ export class SkillManager {
 
     // Check for duplicates
     if (this.skills.has(name)) {
-      throw new MemoryError(
-        `Skill '${name}' already exists`,
-        ErrorCodes.FILE_EXISTS,
-        { name }
-      );
+      throw new MemoryError(`Skill '${name}' already exists`, ErrorCodes.FILE_EXISTS, { name });
     }
 
     try {
@@ -403,11 +393,7 @@ export class SkillManager {
   async updateSkill(name: string, definition: SkillDefinition): Promise<void> {
     // Check if skill exists
     if (!this.skills.has(name)) {
-      throw new MemoryError(
-        `Skill '${name}' does not exist`,
-        ErrorCodes.FILE_NOT_FOUND,
-        { name }
-      );
+      throw new MemoryError(`Skill '${name}' does not exist`, ErrorCodes.FILE_NOT_FOUND, { name });
     }
 
     try {
@@ -440,11 +426,7 @@ export class SkillManager {
   async deleteSkill(name: string): Promise<void> {
     // Check if skill exists
     if (!this.skills.has(name)) {
-      throw new MemoryError(
-        `Skill '${name}' does not exist`,
-        ErrorCodes.FILE_NOT_FOUND,
-        { name }
-      );
+      throw new MemoryError(`Skill '${name}' does not exist`, ErrorCodes.FILE_NOT_FOUND, { name });
     }
 
     try {

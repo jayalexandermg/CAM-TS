@@ -42,10 +42,7 @@ export class ExplicitRatingCapture {
    * Store captured rating
    */
   async store(rating: ExplicitRating): Promise<void> {
-    const dir = this.storagePath.substring(
-      0,
-      this.storagePath.lastIndexOf('/')
-    );
+    const dir = this.storagePath.substring(0, this.storagePath.lastIndexOf('/'));
     await fs.mkdir(dir, { recursive: true });
 
     const line = JSON.stringify(rating) + '\n';

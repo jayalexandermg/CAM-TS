@@ -213,12 +213,7 @@ export class StateManager extends EventEmitter implements SandboxState {
     this.currentSize = projectedSize;
 
     // Record change
-    this.recordChange(
-      isUpdate ? 'update' : 'create',
-      key,
-      previousValue,
-      clonedValue
-    );
+    this.recordChange(isUpdate ? 'update' : 'create', key, previousValue, clonedValue);
 
     // Check if auto-snapshot needed
     this.checkAutoSnapshot();
@@ -321,9 +316,7 @@ export class StateManager extends EventEmitter implements SandboxState {
    * Get internal state map (for snapshots)
    */
   getStateMap(): Map<string, unknown> {
-    return this.config.deepClone
-      ? deepClone(this.state)
-      : new Map(this.state);
+    return this.config.deepClone ? deepClone(this.state) : new Map(this.state);
   }
 
   /**
@@ -349,9 +342,7 @@ export class StateManager extends EventEmitter implements SandboxState {
     }
 
     // Find snapshot index in changes (if marked)
-    const snapshotIndex = this.changes.findIndex(
-      (c) => c.metadata?.snapshotId === snapshotId
-    );
+    const snapshotIndex = this.changes.findIndex((c) => c.metadata?.snapshotId === snapshotId);
 
     if (snapshotIndex === -1) {
       return [...this.changes];
@@ -420,9 +411,7 @@ export class StateManager extends EventEmitter implements SandboxState {
     }
 
     // Check if we've hit the change threshold
-    const recentChanges = this.changes.filter(
-      (c) => !c.metadata?.isMarker
-    ).length;
+    const recentChanges = this.changes.filter((c) => !c.metadata?.isMarker).length;
 
     if (recentChanges >= this.config.maxChangesBeforeSnapshot) {
       const snapshotId = this.snapshotCallback('Auto-snapshot: change threshold');

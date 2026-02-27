@@ -46,10 +46,7 @@ export class AgentRLMBridge extends EventEmitter {
   private agentSessions: Map<string, AgentSession>;
   private sharedContext: Map<string, ContextItem>;
 
-  constructor(
-    orchestrator: RLMOrchestrator,
-    config?: Partial<AgentRLMBridgeConfig>
-  ) {
+  constructor(orchestrator: RLMOrchestrator, config?: Partial<AgentRLMBridgeConfig>) {
     super();
     this.config = { ...DEFAULT_AGENT_RLM_BRIDGE_CONFIG, ...config };
     this.orchestrator = orchestrator;
@@ -269,9 +266,7 @@ export class AgentRLMBridge extends EventEmitter {
 
     if (strategy === 'parallel') {
       // All agents reason in parallel
-      const promises = agents.map((agent) =>
-        this.reason(agent, problem, { forceRLM: true })
-      );
+      const promises = agents.map((agent) => this.reason(agent, problem, { forceRLM: true }));
       const parallelResults = await Promise.all(promises);
       results.push(...parallelResults);
     } else if (strategy === 'sequential') {
@@ -291,9 +286,7 @@ export class AgentRLMBridge extends EventEmitter {
       }
     } else {
       // Consensus: all agents reason, then synthesize
-      const promises = agents.map((agent) =>
-        this.reason(agent, problem, { forceRLM: true })
-      );
+      const promises = agents.map((agent) => this.reason(agent, problem, { forceRLM: true }));
       const parallelResults = await Promise.all(promises);
       results.push(...parallelResults);
 
@@ -460,11 +453,7 @@ Communication Style: ${definition.communicationStyle}
   /**
    * Cache result for agent
    */
-  private cacheResult(
-    agentId: string,
-    task: string,
-    result: AgentReasoningResult
-  ): void {
+  private cacheResult(agentId: string, task: string, result: AgentReasoningResult): void {
     // Add to shared context if sharing is enabled
     if (this.config.shareContext && result.rlmResult.success && result.rlmResult.solution) {
       this.addSharedContext(

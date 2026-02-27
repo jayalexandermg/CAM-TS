@@ -7,7 +7,7 @@ export interface HistoryEntry {
   sessionId: string;
   agentId?: string;
   content: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface SessionTranscript {

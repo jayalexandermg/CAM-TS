@@ -9,7 +9,6 @@
  * - Parent-child relationships
  */
 
-import { Agent } from '../../src/agents/Agent';
 import { AgentSpawner } from '../../src/agents/AgentSpawner';
 import { AgentDefinition, AgentConfig } from '../../src/agents/types';
 

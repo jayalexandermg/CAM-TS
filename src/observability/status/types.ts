@@ -98,7 +98,13 @@ export interface TaskWatcherConfig {
 /**
  * Task event types
  */
-export type TaskEventType = 'created' | 'started' | 'progress' | 'completed' | 'failed' | 'cancelled';
+export type TaskEventType =
+  | 'created'
+  | 'started'
+  | 'progress'
+  | 'completed'
+  | 'failed'
+  | 'cancelled';
 
 /**
  * Task event payload

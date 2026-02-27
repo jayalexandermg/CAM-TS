@@ -310,7 +310,8 @@ export class ParallelSpawner extends EventEmitter {
 
     // Attempt to merge objects, or return array if not mergeable
     const allObjects = results.every(
-      (r) => typeof r.result.data === 'object' && r.result.data !== null && !Array.isArray(r.result.data)
+      (r) =>
+        typeof r.result.data === 'object' && r.result.data !== null && !Array.isArray(r.result.data)
     );
 
     if (allObjects) {

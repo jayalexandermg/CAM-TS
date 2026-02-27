@@ -74,18 +74,18 @@ const TIER_CONFIGS: Record<MemoryTier, TierConfig | null> = {
 /** Mapping from directory paths to tiers */
 const DIRECTORY_TO_TIER: Record<string, MemoryTier> = {
   // CAPTURE tier
-  'work': MemoryTier.CAPTURE,
+  work: MemoryTier.CAPTURE,
   'work/INBOX': MemoryTier.CAPTURE,
   'work/SCRATCHPAD': MemoryTier.CAPTURE,
   'work/OBSERVATIONS': MemoryTier.CAPTURE,
   // SYNTHESIS tier
-  'learning': MemoryTier.SYNTHESIS,
+  learning: MemoryTier.SYNTHESIS,
   'learning/PATTERNS': MemoryTier.SYNTHESIS,
   'learning/INSIGHTS': MemoryTier.SYNTHESIS,
   'learning/LEARNINGS': MemoryTier.SYNTHESIS,
   'learning/DECISIONS': MemoryTier.SYNTHESIS,
   // APPLICATION tier
-  'archive': MemoryTier.APPLICATION,
+  archive: MemoryTier.APPLICATION,
   'archive/KNOWLEDGE': MemoryTier.APPLICATION,
   'archive/PROCEDURES': MemoryTier.APPLICATION,
   'archive/REFERENCE': MemoryTier.APPLICATION,

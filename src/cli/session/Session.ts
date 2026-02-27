@@ -59,8 +59,7 @@ export class Session {
     this.history = [];
     this.state = new Map();
     this.sessionDir =
-      sessionDir ||
-      path.join(process.env.HOME || '~', '.infinite-aura-ts', 'sessions', this.id);
+      sessionDir || path.join(process.env.HOME || '~', '.infinite-aura-ts', 'sessions', this.id);
   }
 
   /**

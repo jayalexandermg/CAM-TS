@@ -84,7 +84,7 @@ export class TraitInference {
     }
 
     // Match personality based on task tone
-    for (const [traitName, trait] of Object.entries(this.traitsData.personality)) {
+    for (const [traitName] of Object.entries(this.traitsData.personality)) {
       const personalityIndicators = this.getPersonalityIndicators(traitName);
       const matchedIndicators = personalityIndicators.filter((ind) =>
         normalizedTask.includes(ind.toLowerCase())
@@ -101,7 +101,7 @@ export class TraitInference {
     }
 
     // Match approach based on task requirements
-    for (const [traitName, trait] of Object.entries(this.traitsData.approach)) {
+    for (const [traitName] of Object.entries(this.traitsData.approach)) {
       const approachIndicators = this.getApproachIndicators(traitName);
       const matchedIndicators = approachIndicators.filter((ind) =>
         normalizedTask.includes(ind.toLowerCase())
@@ -214,7 +214,7 @@ export class TraitInference {
   /**
    * Calculate intent clarity score
    */
-  private calculateIntentClarity(matches: TraitMatch[], task: string): number {
+  private calculateIntentClarity(matches: TraitMatch[], _task: string): number {
     if (matches.length === 0) return 0;
 
     // High clarity: one dominant match with high confidence
@@ -235,7 +235,7 @@ export class TraitInference {
   /**
    * Extract contextual factors that influenced trait selection
    */
-  private extractContextualFactors(task: string, matches: TraitMatch[]): string[] {
+  private extractContextualFactors(task: string, _matches: TraitMatch[]): string[] {
     const factors: string[] = [];
 
     // Check for urgency indicators

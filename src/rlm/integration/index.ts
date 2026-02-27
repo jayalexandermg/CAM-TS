@@ -20,7 +20,4 @@ export type {
   RLMOrchestratorEvents,
 } from './types';
 
-export {
-  DEFAULT_RLM_ORCHESTRATOR_CONFIG,
-  DEFAULT_AGENT_RLM_BRIDGE_CONFIG,
-} from './types';
+export { DEFAULT_RLM_ORCHESTRATOR_CONFIG, DEFAULT_AGENT_RLM_BRIDGE_CONFIG } from './types';

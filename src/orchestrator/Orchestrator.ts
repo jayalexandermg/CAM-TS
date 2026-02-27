@@ -76,8 +76,7 @@ export class Orchestrator extends EventEmitter {
     this.startTime = new Date();
 
     // Initialize components (use injected dependencies or create new ones)
-    this.taskManager =
-      dependencies?.taskManager || new TaskManager(this.config.maxConcurrentTasks);
+    this.taskManager = dependencies?.taskManager || new TaskManager(this.config.maxConcurrentTasks);
     this.errorHandler = dependencies?.errorHandler || new ErrorHandler();
     this.securityManager = dependencies?.securityManager || new SecurityManager();
     this.agentSpawner = dependencies?.agentSpawner || new AgentSpawner();
@@ -168,14 +167,11 @@ export class Orchestrator extends EventEmitter {
       await this.taskManager.startTask(task.id);
 
       // Execute with error handling
-      const result = await this.errorHandler.handle(
-        () => this.executeTask(task),
-        {
-          taskId: task.id,
-          sessionId: request.sessionId,
-          timestamp: new Date(),
-        }
-      );
+      const result = await this.errorHandler.handle(() => this.executeTask(task), {
+        taskId: task.id,
+        sessionId: request.sessionId,
+        timestamp: new Date(),
+      });
 
       // Complete task
       this.taskManager.completeTask(task.id, result);
@@ -286,7 +282,7 @@ export class Orchestrator extends EventEmitter {
    * Creates the full ExecutionContext with system prompt, tools,
    * tool executor, and LLM client for the agent to use.
    */
-  private buildExecutionContext(request: TaskRequest, agent: Agent): ExecutionContext {
+  private buildExecutionContext(request: TaskRequest, _agent: Agent): ExecutionContext {
     // Build base system prompt
     const systemPrompt = this.buildSystemPrompt(request);
 
@@ -359,9 +355,10 @@ When you need to perform actions, use the available tools. Think step by step ab
    * CoreManager + PrepromptInjector → PrepromptHydrator
    * All of the above → SkillActivator → SkillExecutor
    */
-  private buildSkillChain(
-    memoryBasePath: string
-  ): { activator: SkillActivator | null; executor: SkillExecutor | null } {
+  private buildSkillChain(memoryBasePath: string): {
+    activator: SkillActivator | null;
+    executor: SkillExecutor | null;
+  } {
     try {
       const skillManager = new SkillManager(memoryBasePath);
       const coreManager = new CoreManager(memoryBasePath);

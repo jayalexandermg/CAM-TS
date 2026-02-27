@@ -95,8 +95,10 @@ describe('CLI Integration', () => {
       const parser = new CommandParser(['unknown-cmd']);
       const command = parser.parse();
 
-      // CommandRouter throws CommandNotFoundError for unknown commands
-      await expect(router.route(command)).rejects.toThrow('unknown-cmd');
+      // CommandRouter returns an error result (exitCode 1) for unknown commands
+      const result = await router.route(command);
+      expect(result.exitCode).toBe(1);
+      expect(result.error).toContain('unknown-cmd');
     });
 
     it('should parse command with flags and options', async () => {

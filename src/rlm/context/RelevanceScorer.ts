@@ -22,11 +22,7 @@ import {
 /**
  * Extract keywords from text
  */
-function extractKeywords(
-  text: string,
-  stopWords: Set<string>,
-  minLength: number
-): string[] {
+function extractKeywords(text: string, stopWords: Set<string>, minLength: number): string[] {
   if (!text) return [];
 
   // Normalize and split
@@ -55,10 +51,7 @@ function jaccardSimilarity(set1: Set<string>, set2: Set<string>): number {
 /**
  * Calculate cosine similarity between keyword frequency vectors
  */
-function cosineSimilarity(
-  keywords1: string[],
-  keywords2: string[]
-): number {
+function cosineSimilarity(keywords1: string[], keywords2: string[]): number {
   if (keywords1.length === 0 || keywords2.length === 0) return 0;
 
   // Build frequency maps
@@ -149,9 +142,7 @@ export class RLMRelevanceScorer extends EventEmitter {
       this.config.minKeywordLength
     );
 
-    const matchedKeywords = itemKeywords.filter((k) =>
-      this.queryKeywords.includes(k)
-    );
+    const matchedKeywords = itemKeywords.filter((k) => this.queryKeywords.includes(k));
 
     return {
       score: finalScore,
@@ -174,7 +165,10 @@ export class RLMRelevanceScorer extends EventEmitter {
   /**
    * Score multiple items and sort by relevance
    */
-  scoreAll(items: ContextItem[], query?: string): Array<{
+  scoreAll(
+    items: ContextItem[],
+    query?: string
+  ): Array<{
     item: ContextItem;
     result: RelevanceResult;
   }> {
@@ -194,15 +188,9 @@ export class RLMRelevanceScorer extends EventEmitter {
   /**
    * Filter items by minimum relevance score
    */
-  filter(
-    items: ContextItem[],
-    minScore: number,
-    query?: string
-  ): ContextItem[] {
+  filter(items: ContextItem[], minScore: number, query?: string): ContextItem[] {
     const scored = this.scoreAll(items, query);
-    return scored
-      .filter((s) => s.result.score >= minScore)
-      .map((s) => s.item);
+    return scored.filter((s) => s.result.score >= minScore).map((s) => s.item);
   }
 
   /**
@@ -297,11 +285,7 @@ export class RLMRelevanceScorer extends EventEmitter {
     const normalized = text.toLowerCase();
 
     // Extract single important words (nouns, verbs)
-    const words = extractKeywords(
-      text,
-      this.config.stopWords,
-      this.config.minKeywordLength
-    );
+    const words = extractKeywords(text, this.config.stopWords, this.config.minKeywordLength);
 
     for (const word of words) {
       if (word.length >= 4) {
@@ -326,9 +310,9 @@ export class RLMRelevanceScorer extends EventEmitter {
     // Extract common technical patterns
     const patterns = [
       /\b[A-Z][a-z]+(?:[A-Z][a-z]+)+\b/g, // CamelCase
-      /\b[a-z]+_[a-z]+(?:_[a-z]+)*\b/g,   // snake_case
-      /\b[a-z]+-[a-z]+(?:-[a-z]+)*\b/g,   // kebab-case
-      /\b\d+(?:\.\d+)+\b/g,               // version numbers
+      /\b[a-z]+_[a-z]+(?:_[a-z]+)*\b/g, // snake_case
+      /\b[a-z]+-[a-z]+(?:-[a-z]+)*\b/g, // kebab-case
+      /\b\d+(?:\.\d+)+\b/g, // version numbers
     ];
 
     for (const pattern of patterns) {

@@ -5,8 +5,8 @@
  * and keyword matching.
  */
 
-import { KeywordMatcher, KeywordMatch } from './KeywordMatcher';
-import { SkillRegistry, SkillDefinition } from './SkillRegistry';
+import { KeywordMatcher } from './KeywordMatcher';
+import { SkillDefinition } from './SkillRegistry';
 
 export interface RouteResult {
   skill: string;
@@ -49,18 +49,18 @@ export class IntentRouter {
         confidence: 0,
         matchedKeywords: [],
         matchedTriggers: [],
-        alternatives: []
+        alternatives: [],
       };
     }
 
     const best = results[0];
     return {
       ...best,
-      alternatives: results.slice(1).map(r => ({
+      alternatives: results.slice(1).map((r) => ({
         skill: r.skill,
         confidence: r.confidence,
-        reason: `Matched: ${r.matchedKeywords.slice(0, 3).join(', ')}`
-      }))
+        reason: `Matched: ${r.matchedKeywords.slice(0, 3).join(', ')}`,
+      })),
     };
   }
 
@@ -72,8 +72,7 @@ export class IntentRouter {
     const results: RouteResult[] = [];
 
     for (const skill of skills) {
-      const { confidence, matchedKeywords, matchedTriggers } =
-        this.scoreSkill(userInput, skill);
+      const { confidence, matchedKeywords, matchedTriggers } = this.scoreSkill(userInput, skill);
 
       if (confidence > 0.1) {
         results.push({
@@ -81,50 +80,50 @@ export class IntentRouter {
           confidence,
           matchedKeywords,
           matchedTriggers,
-          alternatives: []
+          alternatives: [],
         });
       }
     }
 
-    return results
-      .sort((a, b) => b.confidence - a.confidence)
-      .slice(0, limit);
+    return results.sort((a, b) => b.confidence - a.confidence).slice(0, limit);
   }
 
-  private scoreSkill(input: string, skill: SkillDefinition): {
+  private scoreSkill(
+    input: string,
+    skill: SkillDefinition
+  ): {
     confidence: number;
     matchedKeywords: string[];
     matchedTriggers: string[];
   } {
     // Score keywords
     const keywordMatches = this.matcher.match(input, skill.keywords);
-    const keywordScore = this.matcher.aggregateScore(
-      keywordMatches,
-      skill.keywords.length
-    );
+    const keywordScore = this.matcher.aggregateScore(keywordMatches, skill.keywords.length);
 
     // Score USE WHEN triggers
     const triggerMatches = this.matchTriggers(input, skill.useWhen);
-    const triggerScore = triggerMatches.length > 0
-      ? triggerMatches.length / skill.useWhen.length
-      : 0;
+    const triggerScore =
+      triggerMatches.length > 0 ? triggerMatches.length / skill.useWhen.length : 0;
 
     // Combined confidence
     const confidence = keywordScore * 0.6 + triggerScore * 0.4;
 
     return {
       confidence,
-      matchedKeywords: keywordMatches.map(m => m.keyword),
-      matchedTriggers: triggerMatches
+      matchedKeywords: keywordMatches.map((m) => m.keyword),
+      matchedTriggers: triggerMatches,
     };
   }
 
   private matchTriggers(input: string, triggers: string[]): string[] {
     const normalizedInput = input.toLowerCase();
-    return triggers.filter(trigger => {
+    return triggers.filter((trigger) => {
       // Extract key phrases from trigger
-      const words = trigger.toLowerCase().split(/\s+/).filter(w => w.length > 3);
-      return words.some(word => normalizedInput.includes(word));
+      const words = trigger
+        .toLowerCase()
+        .split(/\s+/)
+        .filter((w) => w.length > 3);
+      return words.some((word) => normalizedInput.includes(word));
     });
   }
 }

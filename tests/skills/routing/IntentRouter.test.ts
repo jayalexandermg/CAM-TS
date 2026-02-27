@@ -4,7 +4,7 @@
  * Tests for intent-based skill routing using USE WHEN triggers and keywords.
  */
 
-import { IntentRouter, RouteResult } from '../../../src/skills/routing/IntentRouter';
+import { IntentRouter } from '../../../src/skills/routing/IntentRouter';
 import { KeywordMatcher, KeywordMatch } from '../../../src/skills/routing/KeywordMatcher';
 import { SkillRegistry, SkillDefinition } from '../../../src/skills/routing/SkillRegistry';
 

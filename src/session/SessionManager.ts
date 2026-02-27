@@ -7,7 +7,7 @@
 
 import * as crypto from 'crypto';
 import { HookEventEmitter } from '../hooks/event-emitter';
-import { EventType, SessionStartEvent, SessionStartMetadata, HookEvent } from '../hooks/types';
+import { EventType, SessionStartEvent, SessionStartMetadata } from '../hooks/types';
 
 /**
  * Options for SessionManager

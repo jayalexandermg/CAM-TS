@@ -139,9 +139,7 @@ export class SpotCheck {
         valid: result.data !== undefined && result.data !== null,
         validatorName: 'data-present',
         message:
-          result.data !== undefined && result.data !== null
-            ? 'Data is present'
-            : 'Data is missing',
+          result.data !== undefined && result.data !== null ? 'Data is present' : 'Data is missing',
       }),
     };
   }
@@ -153,9 +151,7 @@ export class SpotCheck {
         valid: result.error === undefined,
         validatorName: 'no-error',
         message:
-          result.error === undefined
-            ? 'No error present'
-            : `Error found: ${result.error.message}`,
+          result.error === undefined ? 'No error present' : `Error found: ${result.error.message}`,
       }),
     };
   }
@@ -172,7 +168,7 @@ export class SpotCheck {
         return {
           valid,
           validatorName: name,
-          message: valid ? 'Validation passed' : messageOnFail ?? 'Validation failed',
+          message: valid ? 'Validation passed' : (messageOnFail ?? 'Validation failed'),
         };
       },
     };

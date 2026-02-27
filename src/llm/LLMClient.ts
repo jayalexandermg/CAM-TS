@@ -136,10 +136,7 @@ export class LLMClient extends EventEmitter {
   /**
    * Mock streaming for testing
    */
-  private async mockStream(
-    request: LLMRequest,
-    callback: StreamCallback
-  ): Promise<LLMResponse> {
+  private async mockStream(request: LLMRequest, callback: StreamCallback): Promise<LLMResponse> {
     const response = await this.mockComplete(request);
 
     // Simulate streaming by breaking response into chunks

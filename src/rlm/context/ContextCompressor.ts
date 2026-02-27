@@ -83,11 +83,7 @@ export class ContextCompressor extends EventEmitter {
   /**
    * Compress multiple items to fit within token budget
    */
-  compressToFit(
-    items: ContextItem[],
-    maxTokens: number,
-    charsPerToken: number = 4
-  ): ContextItem[] {
+  compressToFit(items: ContextItem[], maxTokens: number, charsPerToken: number = 4): ContextItem[] {
     // Calculate current token usage
     const currentTokens = items.reduce(
       (sum, item) => sum + Math.ceil(item.content.length / charsPerToken),
@@ -101,9 +97,7 @@ export class ContextCompressor extends EventEmitter {
     // Sort by priority (compress low priority first)
     const sortedItems = [...items].sort((a, b) => {
       const priorityOrder = { critical: 0, high: 1, medium: 2, low: 3 };
-      return (
-        priorityOrder[b.priority] - priorityOrder[a.priority]
-      );
+      return priorityOrder[b.priority] - priorityOrder[a.priority];
     });
 
     // Compress items starting from lowest priority
@@ -233,9 +227,22 @@ export class ContextCompressor extends EventEmitter {
 
     // Contains important keywords
     const importantKeywords = [
-      'important', 'key', 'critical', 'must', 'should', 'result',
-      'conclusion', 'therefore', 'because', 'error', 'solution',
-      'problem', 'issue', 'note', 'warning', 'example',
+      'important',
+      'key',
+      'critical',
+      'must',
+      'should',
+      'result',
+      'conclusion',
+      'therefore',
+      'because',
+      'error',
+      'solution',
+      'problem',
+      'issue',
+      'note',
+      'warning',
+      'example',
     ];
     const lowerSentence = sentence.toLowerCase();
     for (const keyword of importantKeywords) {
@@ -264,10 +271,7 @@ export class ContextCompressor extends EventEmitter {
   /**
    * Select top sentences while maintaining original order
    */
-  private selectTopSentences(
-    sentences: ScoredSentence[],
-    count: number
-  ): ScoredSentence[] {
+  private selectTopSentences(sentences: ScoredSentence[], count: number): ScoredSentence[] {
     // Sort by score and take top N
     const sorted = [...sentences].sort((a, b) => b.score - a.score);
     const top = sorted.slice(0, count);
@@ -279,9 +283,10 @@ export class ContextCompressor extends EventEmitter {
   /**
    * Extract elements that should be preserved
    */
-  private extractPreservedElements(
-    text: string
-  ): { text: string; preserved: { types: string[]; elements: Map<string, string> } } {
+  private extractPreservedElements(text: string): {
+    text: string;
+    preserved: { types: string[]; elements: Map<string, string> };
+  } {
     const preserved: { types: string[]; elements: Map<string, string> } = {
       types: [],
       elements: new Map(),
@@ -352,9 +357,7 @@ export class ContextCompressor extends EventEmitter {
     const compressedWords = new Set(compressed.toLowerCase().split(/\s+/));
 
     // Find important words that were removed
-    const importantWords = originalWords.filter((w) =>
-      w.length > 5 && !compressedWords.has(w)
-    );
+    const importantWords = originalWords.filter((w) => w.length > 5 && !compressedWords.has(w));
 
     if (importantWords.length > 5) {
       lost.push(`~${importantWords.length} potentially significant words`);
@@ -403,10 +406,7 @@ export class ContextCompressor extends EventEmitter {
     }
 
     // Estimate based on sentence count
-    const estimatedRatio = Math.max(
-      0.3,
-      this.config.keySentenceCount / sentences.length
-    );
+    const estimatedRatio = Math.max(0.3, this.config.keySentenceCount / sentences.length);
 
     return {
       canCompress: true,

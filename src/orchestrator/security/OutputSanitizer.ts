@@ -13,7 +13,7 @@ export class OutputSanitizer {
     }
 
     if (Array.isArray(output)) {
-      return output.map(item => this.sanitize(item));
+      return output.map((item) => this.sanitize(item));
     }
 
     if (typeof output === 'object' && output !== null) {
@@ -69,11 +69,9 @@ export class OutputSanitizer {
       'accesstoken',
       'access_token',
       'privatekey',
-      'private_key'
+      'private_key',
     ];
 
-    return sensitiveKeys.some(sensitive =>
-      key.toLowerCase().includes(sensitive)
-    );
+    return sensitiveKeys.some((sensitive) => key.toLowerCase().includes(sensitive));
   }
 }

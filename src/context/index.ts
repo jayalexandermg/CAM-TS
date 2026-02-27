@@ -71,18 +71,10 @@ export {
 } from './dynamic-context-loader';
 
 // Preprompt injection
-export {
-  PrepromptInjector,
-  PrepromptInjectorOptions,
-  PrepromptLayer,
-} from './PrepromptInjector';
+export { PrepromptInjector, PrepromptInjectorOptions, PrepromptLayer } from './PrepromptInjector';
 
 // Token management
-export {
-  TokenManager,
-  TokenManagerConfig,
-  DEFAULT_TOKEN_MANAGER_CONFIG,
-} from './TokenManager';
+export { TokenManager, TokenManagerConfig, DEFAULT_TOKEN_MANAGER_CONFIG } from './TokenManager';
 
 // Two-layer preprompt hydration
 export { PrepromptHydrator } from './PrepromptHydrator';

@@ -3,7 +3,7 @@ import * as os from 'os';
 import * as fs from 'fs';
 import { SkillManager } from '../../src/skills/SkillManager';
 import { IntentMatcher } from '../../src/skills/IntentMatcher';
-import { SkillDefinition, SKILLS_DIR, SKILL_STRUCTURE } from '../../src/skills/types';
+import { SkillDefinition, SKILLS_DIR } from '../../src/skills/types';
 
 describe('IntentMatcher', () => {
   const testBasePath = path.join(os.tmpdir(), 'infinite-aura-test-intent-matcher');

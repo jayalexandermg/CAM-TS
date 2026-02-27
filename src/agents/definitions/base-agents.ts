@@ -22,8 +22,7 @@ export const BASE_AGENTS: Record<string, AgentDefinition> = {
     ],
     personality: ['Curious', 'Analytical', 'Detail-oriented', 'Evidence-based'],
     communicationStyle: 'Inquisitive and thorough',
-    approach:
-      'Break problems into searchable questions, validate sources, synthesize findings',
+    approach: 'Break problems into searchable questions, validate sources, synthesize findings',
     availableSkills: ['research', 'analysis', 'synthesis'],
   },
 
@@ -37,12 +36,7 @@ export const BASE_AGENTS: Record<string, AgentDefinition> = {
       'Testing',
       'Debugging',
     ],
-    personality: [
-      'Pragmatic',
-      'Precise',
-      'Quality-focused',
-      'Best-practices oriented',
-    ],
+    personality: ['Pragmatic', 'Precise', 'Quality-focused', 'Best-practices oriented'],
     communicationStyle: 'Technical and direct',
     approach: 'Write clean, tested, maintainable code following best practices',
     availableSkills: ['coding', 'testing', 'debugging', 'code_review'],
@@ -51,18 +45,8 @@ export const BASE_AGENTS: Record<string, AgentDefinition> = {
   coordinator: {
     name: 'coordinator',
     description: 'Task coordination and delegation agent',
-    expertise: [
-      'Task breakdown',
-      'Agent coordination',
-      'Workflow management',
-      'Result synthesis',
-    ],
-    personality: [
-      'Organized',
-      'Strategic',
-      'Collaborative',
-      'Results-oriented',
-    ],
+    expertise: ['Task breakdown', 'Agent coordination', 'Workflow management', 'Result synthesis'],
+    personality: ['Organized', 'Strategic', 'Collaborative', 'Results-oriented'],
     communicationStyle: 'Clear and directive',
     approach:
       'Break complex tasks into subtasks, delegate to specialized agents, synthesize results',

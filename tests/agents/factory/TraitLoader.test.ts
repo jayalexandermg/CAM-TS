@@ -338,7 +338,7 @@ approach:
       const loader = new TraitLoader();
       await loader.load();
 
-      const traits = loader.getAllTraits('nonexistent' as any);
+      const traits = loader.getAllTraits('nonexistent' as never);
 
       expect(traits).toEqual({});
     });
@@ -427,7 +427,7 @@ approach:
     it('should return fresh data after reload', async () => {
       const loader = new TraitLoader();
 
-      const data1 = await loader.load();
+      await loader.load();
 
       // Modify the mock to return different data
       const modifiedYaml = mockTraitsYaml.replace('Security expertise', 'Modified Security');

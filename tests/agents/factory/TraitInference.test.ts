@@ -1,9 +1,4 @@
-import {
-  TraitInference,
-  InferredTraits,
-  ConfidenceLevel,
-  ContextAnalysis,
-} from '../../../src/agents/factory/TraitInference';
+import { TraitInference } from '../../../src/agents/factory/TraitInference';
 import { TraitsData } from '../../../src/agents/traits/types';
 
 const mockTraitsData: TraitsData = {

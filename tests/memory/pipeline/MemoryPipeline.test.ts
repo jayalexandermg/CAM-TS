@@ -2,7 +2,6 @@ import * as path from 'path';
 import * as os from 'os';
 import * as fs from 'fs';
 import { MemoryPipeline, MemoryTier } from '../../../src/memory/pipeline';
-import { MemoryError } from '../../../src/exceptions';
 
 describe('MemoryPipeline', () => {
   const testBasePath = path.join(os.tmpdir(), 'infinite-aura-test-memory-pipeline');

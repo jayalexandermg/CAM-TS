@@ -37,8 +37,8 @@ export class SkillRegistry {
   }
 
   findByKeyword(keyword: string): SkillDefinition[] {
-    return this.getAll().filter(skill =>
-      skill.keywords.some(k => k.toLowerCase().includes(keyword.toLowerCase()))
+    return this.getAll().filter((skill) =>
+      skill.keywords.some((k) => k.toLowerCase().includes(keyword.toLowerCase()))
     );
   }
 }

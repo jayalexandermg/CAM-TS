@@ -7,6 +7,7 @@
  */
 
 import { EventEmitter } from 'events';
+import Anthropic from '@anthropic-ai/sdk';
 import { LLMConfig, LLMRequest, LLMResponse, LLMMessage, StreamCallback } from './types';
 import { AnthropicProvider } from '../../llm/AnthropicProvider';
 import { createConfig, calculateCost, DEFAULT_MODEL } from '../../llm/LLMConfig';
@@ -131,10 +132,7 @@ export class LLMClient extends EventEmitter {
     };
   }
 
-  private async mockStream(
-    request: LLMRequest,
-    callback: StreamCallback
-  ): Promise<LLMResponse> {
+  private async mockStream(request: LLMRequest, callback: StreamCallback): Promise<LLMResponse> {
     const response = await this.mockComplete(request);
 
     // Simulate streaming
@@ -234,10 +232,7 @@ export class LLMClient extends EventEmitter {
    * @param tools - Available tool definitions
    * @returns Response with potential tool use blocks
    */
-  async completeWithTools(
-    request: LLMRequest,
-    tools: ToolDefinition[]
-  ): Promise<ToolUseResponse> {
+  async completeWithTools(request: LLMRequest, tools: ToolDefinition[]): Promise<ToolUseResponse> {
     this.emit('requestStarted', { messages: request.messages.length, tools: tools.length });
 
     try {
@@ -284,10 +279,7 @@ export class LLMClient extends EventEmitter {
     for (let iteration = 0; iteration < maxIterations; iteration++) {
       // Build request
       const request: LLMRequest = {
-        messages: [
-          { role: 'system', content: systemPrompt },
-          ...this.flattenMessages(messages),
-        ],
+        messages: [{ role: 'system', content: systemPrompt }, ...this.flattenMessages(messages)],
       };
 
       // Call LLM with tools
@@ -371,13 +363,10 @@ export class LLMClient extends EventEmitter {
           );
 
           // Create result block
-          toolResults.push(
-            createToolResult(toolUse.id, result.result, !result.success)
-          );
+          toolResults.push(createToolResult(toolUse.id, result.result, !result.success));
         } catch (error) {
           // Tool execution failed
-          const errorMessage =
-            error instanceof Error ? error.message : String(error);
+          const errorMessage = error instanceof Error ? error.message : String(error);
 
           toolUses.push({
             request: {
@@ -441,7 +430,7 @@ export class LLMClient extends EventEmitter {
       name: t.name,
       description: t.description,
       input_schema: t.input_schema as Record<string, unknown>,
-    })) as any;
+    })) as Anthropic.Tool[];
 
     const response = await client.messages.create({
       model: this.config.model,
@@ -528,11 +517,15 @@ export class LLMClient extends EventEmitter {
   /**
    * Format messages for tool use API
    */
-  private formatMessagesForTools(
-    messages: LLMMessage[]
-  ): { systemPrompt: string; messages: Array<{ role: 'user' | 'assistant'; content: string | ContentBlock[] }> } {
+  private formatMessagesForTools(messages: LLMMessage[]): {
+    systemPrompt: string;
+    messages: Array<{ role: 'user' | 'assistant'; content: string | ContentBlock[] }>;
+  } {
     let systemPrompt = '';
-    const formattedMessages: Array<{ role: 'user' | 'assistant'; content: string | ContentBlock[] }> = [];
+    const formattedMessages: Array<{
+      role: 'user' | 'assistant';
+      content: string | ContentBlock[];
+    }> = [];
 
     for (const msg of messages) {
       if (msg.role === 'system') {
@@ -562,10 +555,7 @@ export class LLMClient extends EventEmitter {
   private flattenMessages(messages: MessageWithContent[]): LLMMessage[] {
     return messages.map((msg) => ({
       role: msg.role,
-      content:
-        typeof msg.content === 'string'
-          ? msg.content
-          : JSON.stringify(msg.content),
+      content: typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content),
     }));
   }
 }

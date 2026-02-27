@@ -17,7 +17,7 @@ export class SecurityManager {
       maxConcurrentAgents: config?.maxConcurrentAgents ?? 5,
       maxTaskDuration: config?.maxTaskDuration ?? 300000, // 5 minutes
       allowedFileExtensions: config?.allowedFileExtensions ?? ['.txt', '.md', '.json'],
-      blockedPatterns: config?.blockedPatterns ?? []
+      blockedPatterns: config?.blockedPatterns ?? [],
     };
 
     this.inputValidator = new InputValidator(this.config);

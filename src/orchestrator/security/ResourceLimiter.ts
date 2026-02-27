@@ -9,7 +9,7 @@ export class ResourceLimiter {
     this.usage = {
       agentCount: 0,
       activeAgents: 0,
-      sessionCount: 0
+      sessionCount: 0,
     };
   }
 
@@ -56,7 +56,7 @@ export class ResourceLimiter {
     this.usage = {
       agentCount: 0,
       activeAgents: 0,
-      sessionCount: 0
+      sessionCount: 0,
     };
   }
 

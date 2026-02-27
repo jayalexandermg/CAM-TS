@@ -38,11 +38,7 @@ export class AgentSpawner {
     return agent;
   }
 
-  spawnByName(
-    name: string,
-    sessionId: string,
-    parentAgentId?: string
-  ): Agent {
+  spawnByName(name: string, sessionId: string, parentAgentId?: string): Agent {
     const definition = this.agentDefinitions.get(name);
     if (!definition) {
       throw new Error(`Agent definition not found: ${name}`);
@@ -68,15 +64,11 @@ export class AgentSpawner {
   }
 
   getAgentsBySession(sessionId: string): Agent[] {
-    return this.listAgents().filter(
-      (agent) => agent.getSessionId() === sessionId
-    );
+    return this.listAgents().filter((agent) => agent.getSessionId() === sessionId);
   }
 
   getChildAgents(parentAgentId: string): Agent[] {
-    return this.listAgents().filter(
-      (agent) => agent.getParentAgentId() === parentAgentId
-    );
+    return this.listAgents().filter((agent) => agent.getParentAgentId() === parentAgentId);
   }
 
   async terminateAgent(id: string): Promise<void> {

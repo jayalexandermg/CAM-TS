@@ -72,12 +72,10 @@ export class StopHook implements Hook {
 
       // Capture final output if provided
       if (context.finalOutput) {
-        await this.uocs.captureOutput(
-          context.sessionId,
-          context.finalOutput,
-          context.agentId,
-          { reason: context.reason, final: true }
-        );
+        await this.uocs.captureOutput(context.sessionId, context.finalOutput, context.agentId, {
+          reason: context.reason,
+          final: true,
+        });
       }
 
       return {
@@ -85,14 +83,14 @@ export class StopHook implements Hook {
         duration: Date.now() - startTime,
         data: {
           sessionEnded: true,
-          reason: context.reason
-        }
+          reason: context.reason,
+        },
       };
     } catch (error) {
       return {
         success: false,
         duration: Date.now() - startTime,
-        error: error as Error
+        error: error as Error,
       };
     }
   }

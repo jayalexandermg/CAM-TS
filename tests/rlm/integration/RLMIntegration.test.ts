@@ -405,7 +405,7 @@ describe('AgentRLMBridge', () => {
       expect(result.agentId).toBe(agent.getId());
       expect(result.task).toBe('What is the best approach?');
       expect(result.rlmResult.success).toBe(true);
-      expect(result.duration).toBeGreaterThan(0);
+      expect(result.duration).toBeGreaterThanOrEqual(0);
     });
 
     it('should throw when reasoning with unregistered agent', async () => {

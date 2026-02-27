@@ -143,11 +143,7 @@ export class Logger {
    * @param message Log message
    * @param context Optional context data
    */
-  private log(
-    level: LogLevel,
-    message: string,
-    context?: Record<string, unknown>
-  ): void {
+  private log(level: LogLevel, message: string, context?: Record<string, unknown>): void {
     // Check if this level should be logged
     if (!this.shouldLog(level)) {
       return;

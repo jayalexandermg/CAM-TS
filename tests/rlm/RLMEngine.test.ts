@@ -12,10 +12,8 @@
 import { RLMEngine } from '../../src/rlm/RLMEngine';
 import { ReasoningLoop } from '../../src/rlm/ReasoningLoop';
 import {
-  RLMConfig,
   Problem,
-  Solution,
-  ReasoningResult,
+  ReasoningContext,
   DEFAULT_RLM_CONFIG,
 } from '../../src/rlm/types';
 
@@ -335,7 +333,7 @@ describe('RLMEngine', () => {
     it('should cache solutions when enabled', async () => {
       const cachingEngine = new RLMEngine({ enableCaching: true });
 
-      const result1 = await cachingEngine.reason('Cache test query');
+      await cachingEngine.reason('Cache test query');
       const result2 = await cachingEngine.reason('Cache test query');
 
       // Second call should use cache
@@ -345,7 +343,7 @@ describe('RLMEngine', () => {
     it('should not cache when disabled', async () => {
       const noCacheEngine = new RLMEngine({ enableCaching: false });
 
-      const result1 = await noCacheEngine.reason('No cache query');
+      await noCacheEngine.reason('No cache query');
       const result2 = await noCacheEngine.reason('No cache query');
 
       expect(result2.metrics.cacheHits).toBe(0);
@@ -628,7 +626,7 @@ describe('ReasoningLoop', () => {
 });
 
 // Helper function to create test context
-function createTestContext(): any {
+function createTestContext(): ReasoningContext {
   return {
     sessionId: 'test-session',
     trace: {

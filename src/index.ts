@@ -157,18 +157,8 @@ export * from './learning';
 // =============================================================================
 // Agents Module - Agent spawning and management
 // =============================================================================
-export {
-  Agent,
-  AgentSpawner,
-  BASE_AGENTS,
-} from './agents';
-export type {
-  AgentDefinition,
-  AgentConfig,
-  AgentResult,
-  AgentState,
-  AgentStatus,
-} from './agents';
+export { Agent, AgentSpawner, BASE_AGENTS } from './agents';
+export type { AgentDefinition, AgentConfig, AgentResult, AgentState, AgentStatus } from './agents';
 
 // =============================================================================
 // Orchestrator Module - Central coordination
@@ -234,11 +224,7 @@ export {
   VersionCommand,
   InitCommand,
 } from './cli';
-export type {
-  Command,
-  CommandResult,
-  CommandHandler,
-} from './cli';
+export type { Command, CommandResult, CommandHandler } from './cli';
 
 // =============================================================================
 // Persona Module - Agent personality management
@@ -248,10 +234,7 @@ export { Persona, PersonaManager } from './persona';
 // =============================================================================
 // Config Module - Configuration management
 // =============================================================================
-export {
-  ConfigManager,
-  DEFAULT_CONFIG,
-} from './config';
+export { ConfigManager, DEFAULT_CONFIG } from './config';
 export type {
   CAMConfig,
   PartialCAMConfig,

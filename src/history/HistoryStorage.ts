@@ -6,11 +6,7 @@ export class HistoryStorage {
   private baseDir: string;
 
   constructor(baseDir?: string) {
-    this.baseDir = baseDir || path.join(
-      process.env.HOME || '~',
-      '.infinite-aura-ts',
-      'history'
-    );
+    this.baseDir = baseDir || path.join(process.env.HOME || '~', '.infinite-aura-ts', 'history');
   }
 
   async initialize(): Promise<void> {
@@ -37,7 +33,7 @@ export class HistoryStorage {
 
     // Also save as JSONL for streaming
     const jsonlPath = path.join(this.baseDir, 'Sessions', `${transcript.sessionId}.jsonl`);
-    const lines = transcript.turns.map(t => JSON.stringify(t)).join('\n');
+    const lines = transcript.turns.map((t) => JSON.stringify(t)).join('\n');
     await fs.writeFile(jsonlPath, lines);
   }
 
@@ -84,9 +80,7 @@ export class HistoryStorage {
 
     try {
       const files = await fs.readdir(dirPath);
-      return files
-        .filter(f => f.endsWith('.json'))
-        .map(f => f.replace('.json', ''));
+      return files.filter((f) => f.endsWith('.json')).map((f) => f.replace('.json', ''));
     } catch {
       return [];
     }
@@ -112,7 +106,7 @@ export class HistoryStorage {
       learning: 'Learnings',
       research: 'Research',
       decision: 'Decisions',
-      output: 'RawOutputs'
+      output: 'RawOutputs',
     };
     return map[type];
   }

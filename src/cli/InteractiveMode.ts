@@ -20,7 +20,6 @@ import { CoreManager } from '../memory/core';
 import { PrepromptInjector } from '../context/PrepromptInjector';
 import { OrchestratorBridge } from './OrchestratorBridge';
 import { CommandNotFoundError } from './errors';
-import { UOCS } from '../history/UOCS';
 import { SessionTranscript, Learning, Decision } from '../history/types';
 
 /**
@@ -258,7 +257,9 @@ export class InteractiveMode {
 
     if (input === '/do' || input === '/execute') {
       this.setMode('execution');
-      this.options.outputFn('\nSwitched to execution mode - CAM will orchestrate agents to execute tasks');
+      this.options.outputFn(
+        '\nSwitched to execution mode - CAM will orchestrate agents to execute tasks'
+      );
       this.options.outputFn('Use /chat or /ideate to switch to ideation mode\n');
       return;
     }
@@ -591,13 +592,7 @@ export class InteractiveMode {
 
     try {
       const uocs = this.bridge.getOrchestrator().getUOCS();
-      return await uocs.captureLearning(
-        this.session.getId(),
-        topic,
-        insight,
-        confidence,
-        source
-      );
+      return await uocs.captureLearning(this.session.getId(), topic, insight, confidence, source);
     } catch {
       return null;
     }
@@ -735,10 +730,7 @@ export class InteractiveMode {
    * @param coreManager - Core manager for loading context
    * @param prepromptInjector - Preprompt injector for system prompts
    */
-  registerSessionStartHook(
-    coreManager: CoreManager,
-    prepromptInjector: PrepromptInjector
-  ): void {
+  registerSessionStartHook(coreManager: CoreManager, prepromptInjector: PrepromptInjector): void {
     this.sessionStartHook = new SessionStartHook(coreManager, prepromptInjector, {
       outputConfirmation: true,
       outputFn: this.options.outputFn,

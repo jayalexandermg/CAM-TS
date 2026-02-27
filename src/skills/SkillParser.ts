@@ -296,7 +296,13 @@ export class SkillParser {
 
     // Check for section headers
     const contentLower = content.toLowerCase();
-    const requiredSections = ['## description', '## use when', '## capabilities', '## workflows', '## tools'];
+    const requiredSections = [
+      '## description',
+      '## use when',
+      '## capabilities',
+      '## workflows',
+      '## tools',
+    ];
     for (const section of requiredSections) {
       if (!contentLower.includes(section)) {
         errors.push(`Missing required section: ${section.replace('## ', '').toUpperCase()}`);
@@ -323,7 +329,7 @@ export class SkillParser {
     }
 
     // Remove leading dash
-    let content = trimmed.substring(1).trim();
+    const content = trimmed.substring(1).trim();
 
     // Try to parse "**Name**: Description" format
     const boldMatch = content.match(/^\*\*([^*]+)\*\*:\s*(.*)$/);

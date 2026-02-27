@@ -5,7 +5,6 @@ import {
 } from '../../src/hooks/PostToolUseHook';
 import { EventType, HookAction, PostToolUseEvent } from '../../src/hooks/types';
 import { UOCS } from '../../src/history/UOCS';
-import { HistoryStorage } from '../../src/history/HistoryStorage';
 
 // Mock UOCS to avoid filesystem operations
 jest.mock('../../src/history/UOCS');

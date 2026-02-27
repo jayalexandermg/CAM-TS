@@ -80,10 +80,7 @@ export class ImplicitSentimentCapture {
     return {
       score,
       confidence,
-      indicators: [
-        ...positiveMatches,
-        ...negativeMatches.map((n) => `[-]${n}`),
-      ],
+      indicators: [...positiveMatches, ...negativeMatches.map((n) => `[-]${n}`)],
       text,
       timestamp: new Date(),
     };
@@ -95,10 +92,7 @@ export class ImplicitSentimentCapture {
   async store(sentiment: ImplicitSentiment): Promise<void> {
     if (sentiment.confidence < 0.2) return; // Don't store low-confidence
 
-    const dir = this.storagePath.substring(
-      0,
-      this.storagePath.lastIndexOf('/')
-    );
+    const dir = this.storagePath.substring(0, this.storagePath.lastIndexOf('/'));
     await fs.mkdir(dir, { recursive: true });
 
     const line = JSON.stringify(sentiment) + '\n';
@@ -123,18 +117,15 @@ export class ImplicitSentimentCapture {
         return { average: 0, trend: 'stable' };
       }
 
-      const average =
-        sentiments.reduce((sum, s) => sum + s.score, 0) / sentiments.length;
+      const average = sentiments.reduce((sum, s) => sum + s.score, 0) / sentiments.length;
 
       // Compare first half to second half
       const midpoint = Math.floor(sentiments.length / 2);
       const firstHalf = sentiments.slice(0, midpoint);
       const secondHalf = sentiments.slice(midpoint);
 
-      const firstAvg =
-        firstHalf.reduce((sum, s) => sum + s.score, 0) / firstHalf.length;
-      const secondAvg =
-        secondHalf.reduce((sum, s) => sum + s.score, 0) / secondHalf.length;
+      const firstAvg = firstHalf.reduce((sum, s) => sum + s.score, 0) / firstHalf.length;
+      const secondAvg = secondHalf.reduce((sum, s) => sum + s.score, 0) / secondHalf.length;
 
       let trend: 'improving' | 'declining' | 'stable' = 'stable';
       if (secondAvg - firstAvg > 0.1) trend = 'improving';

@@ -97,7 +97,10 @@ Examples:
     const format = command.options.get('format') || command.options.get('f') || 'prompt';
 
     // Parse traits if provided
-    const traits = traitsStr?.split(',').map((t) => t.trim()).filter(Boolean);
+    const traits = traitsStr
+      ?.split(',')
+      .map((t) => t.trim())
+      .filter(Boolean);
 
     // Validate we have at least one input
     if (!task && !traits?.length && !example) {
@@ -203,7 +206,10 @@ Examples:
       return this.failure('Must provide traits to validate');
     }
 
-    const traits = traitsStr.split(',').map((t) => t.trim()).filter(Boolean);
+    const traits = traitsStr
+      .split(',')
+      .map((t) => t.trim())
+      .filter(Boolean);
     const result = await this.composer.validateTraits(traits);
 
     if (result.valid) {

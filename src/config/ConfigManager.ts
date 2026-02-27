@@ -146,10 +146,7 @@ export class ConfigManager {
    */
   set<T>(keyPath: string, value: T): void {
     const parts = keyPath.split('.');
-    let current: Record<string, unknown> = this.config as unknown as Record<
-      string,
-      unknown
-    >;
+    let current: Record<string, unknown> = this.config as unknown as Record<string, unknown>;
 
     for (let i = 0; i < parts.length - 1; i++) {
       const part = parts[i];

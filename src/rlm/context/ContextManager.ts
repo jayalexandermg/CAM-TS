@@ -207,9 +207,7 @@ export class ContextManager extends EventEmitter {
    * Get items related to a problem
    */
   getByProblem(problemId: string): ContextItem[] {
-    return this.getAll().filter((item) =>
-      item.relatedProblemIds?.includes(problemId)
-    );
+    return this.getAll().filter((item) => item.relatedProblemIds?.includes(problemId));
   }
 
   /**
@@ -235,7 +233,7 @@ export class ContextManager extends EventEmitter {
    * Fit context within token limits
    */
   fitToLimit(maxTokens?: number): FitResult {
-    const limit = maxTokens ?? (this.config.maxTokens - this.config.reservedTokens);
+    const limit = maxTokens ?? this.config.maxTokens - this.config.reservedTokens;
     const items = this.getAll();
     let totalTokens = items.reduce((sum, item) => sum + item.tokenCount, 0);
 
@@ -269,11 +267,7 @@ export class ContextManager extends EventEmitter {
 
     // Try compression
     if (this.config.enableCompression) {
-      const compressed = this.compressor.compressToFit(
-        relevant,
-        limit,
-        this.config.charsPerToken
-      );
+      const compressed = this.compressor.compressToFit(relevant, limit, this.config.charsPerToken);
 
       const compressedTokens = compressed.reduce((sum, item) => sum + item.tokenCount, 0);
       const itemsCompressedCount = compressed.filter((item) => item.isCompressed).length;

@@ -175,7 +175,9 @@ Examples:
       lines.push('Running Tasks:');
       for (const task of runningTasks) {
         const elapsed = Date.now() - task.metadata.startTime.getTime();
-        lines.push(`  - ${task.id}: ${task.request.input.substring(0, 40)}... (${Math.round(elapsed / 1000)}s)`);
+        lines.push(
+          `  - ${task.id}: ${task.request.input.substring(0, 40)}... (${Math.round(elapsed / 1000)}s)`
+        );
       }
     }
 

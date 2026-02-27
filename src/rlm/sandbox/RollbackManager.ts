@@ -9,12 +9,7 @@
  */
 
 import { EventEmitter } from 'events';
-import {
-  StateSnapshot,
-  RollbackResult,
-  SandboxConfig,
-  DEFAULT_SANDBOX_CONFIG,
-} from './types';
+import { StateSnapshot, RollbackResult, SandboxConfig, DEFAULT_SANDBOX_CONFIG } from './types';
 import { StateManager, deepClone } from './StateManager';
 
 /**
@@ -35,11 +30,7 @@ export class RollbackManager extends EventEmitter {
   private stateManager: StateManager;
   private sandboxId: string;
 
-  constructor(
-    sandboxId: string,
-    stateManager: StateManager,
-    config?: Partial<SandboxConfig>
-  ) {
+  constructor(sandboxId: string, stateManager: StateManager, config?: Partial<SandboxConfig>) {
     super();
     this.sandboxId = sandboxId;
     this.stateManager = stateManager;
@@ -57,9 +48,8 @@ export class RollbackManager extends EventEmitter {
       state: this.stateManager.getStateMap(),
       description,
       sandboxId: this.sandboxId,
-      parentId: this.snapshots.length > 0
-        ? this.snapshots[this.snapshots.length - 1].id
-        : undefined,
+      parentId:
+        this.snapshots.length > 0 ? this.snapshots[this.snapshots.length - 1].id : undefined,
     };
 
     this.snapshots.push(snapshot);
@@ -92,9 +82,7 @@ export class RollbackManager extends EventEmitter {
    * Get the most recent snapshot
    */
   getLatestSnapshot(): StateSnapshot | undefined {
-    return this.snapshots.length > 0
-      ? this.snapshots[this.snapshots.length - 1]
-      : undefined;
+    return this.snapshots.length > 0 ? this.snapshots[this.snapshots.length - 1] : undefined;
   }
 
   /**
@@ -123,9 +111,7 @@ export class RollbackManager extends EventEmitter {
     try {
       // Get changes since the snapshot
       const changesSinceSnapshot = this.stateManager.getChangesSinceSnapshot(snapshotId);
-      const changesUndone = changesSinceSnapshot.filter(
-        (c) => !c.metadata?.isMarker
-      ).length;
+      const changesUndone = changesSinceSnapshot.filter((c) => !c.metadata?.isMarker).length;
 
       // Restore state from snapshot
       this.stateManager.restoreState(deepClone(snapshot.state));
@@ -205,7 +191,9 @@ export class RollbackManager extends EventEmitter {
         restoredSnapshotId: '',
         changesUndone: 0,
         duration: 0,
-        errors: [`Cannot rollback ${steps} steps: only ${this.snapshots.length} snapshots available`],
+        errors: [
+          `Cannot rollback ${steps} steps: only ${this.snapshots.length} snapshots available`,
+        ],
         resultingState: this.stateManager.getStateMap(),
       };
     }

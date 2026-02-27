@@ -217,8 +217,7 @@ export class DashboardServer extends EventEmitter {
 
         // Get actual port (important when config.port is 0)
         const address = this.server!.address();
-        this.actualPort =
-          typeof address === 'object' && address ? address.port : this.config.port;
+        this.actualPort = typeof address === 'object' && address ? address.port : this.config.port;
 
         // Start ping interval for WebSocket keep-alive
         this.startPingInterval();
@@ -332,10 +331,7 @@ export class DashboardServer extends EventEmitter {
   /**
    * Handle incoming client message.
    */
-  private handleClientMessage(
-    client: ConnectedClient,
-    message: WebSocketMessage
-  ): void {
+  private handleClientMessage(client: ConnectedClient, message: WebSocketMessage): void {
     switch (message.type) {
       case 'ping':
         this.sendToClient(client, 'pong', { time: Date.now() });
@@ -373,11 +369,7 @@ export class DashboardServer extends EventEmitter {
   /**
    * Send message to a specific client.
    */
-  private sendToClient<T>(
-    client: ConnectedClient,
-    type: string,
-    data: T
-  ): void {
+  private sendToClient<T>(client: ConnectedClient, type: string, data: T): void {
     if (client.ws.readyState === WebSocket.OPEN) {
       const message: WebSocketMessage<T> = {
         type: type as WebSocketMessage['type'],

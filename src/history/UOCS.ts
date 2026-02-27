@@ -21,7 +21,7 @@ export class UOCS extends EventEmitter {
     const transcript: SessionTranscript = {
       sessionId,
       startTime: new Date(),
-      turns: []
+      turns: [],
     };
 
     this.activeTranscripts.set(sessionId, transcript);
@@ -71,7 +71,7 @@ export class UOCS extends EventEmitter {
       insight,
       confidence,
       timestamp: new Date(),
-      source
+      source,
     };
 
     await this.storage.saveLearning(learning);
@@ -95,7 +95,7 @@ export class UOCS extends EventEmitter {
       decision,
       reasoning,
       timestamp: new Date(),
-      alternatives
+      alternatives,
     };
 
     await this.storage.saveDecision(decisionEntry);
@@ -109,7 +109,7 @@ export class UOCS extends EventEmitter {
     sessionId: string,
     content: string,
     agentId?: string,
-    metadata?: Record<string, any>
+    metadata?: Record<string, unknown>
   ): Promise<HistoryEntry> {
     const entry: HistoryEntry = {
       id: this.generateId('output'),
@@ -118,7 +118,7 @@ export class UOCS extends EventEmitter {
       sessionId,
       agentId,
       content,
-      metadata
+      metadata,
     };
 
     await this.storage.saveEntry(entry);

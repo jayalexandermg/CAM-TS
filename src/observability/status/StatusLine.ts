@@ -6,13 +6,10 @@
  */
 
 import { EventEmitter } from 'events';
-import {
-  StatusLineData,
-  StatusLineConfig,
-  StatusSegment,
-} from './types';
+import { StatusLineData, StatusLineConfig, StatusSegment } from './types';
 
-const DEFAULT_CONFIG: Required<Omit<StatusLineConfig, 'formatter'>> & Pick<StatusLineConfig, 'formatter'> = {
+const DEFAULT_CONFIG: Required<Omit<StatusLineConfig, 'formatter'>> &
+  Pick<StatusLineConfig, 'formatter'> = {
   updateInterval: 1000,
   showModel: true,
   showContext: true,
@@ -23,7 +20,8 @@ const DEFAULT_CONFIG: Required<Omit<StatusLineConfig, 'formatter'>> & Pick<Statu
 };
 
 export class StatusLine extends EventEmitter {
-  private config: Required<Omit<StatusLineConfig, 'formatter'>> & Pick<StatusLineConfig, 'formatter'>;
+  private config: Required<Omit<StatusLineConfig, 'formatter'>> &
+    Pick<StatusLineConfig, 'formatter'>;
   private data: StatusLineData;
   private updateTimer: NodeJS.Timeout | null = null;
   private running: boolean = false;
@@ -133,7 +131,7 @@ export class StatusLine extends EventEmitter {
    */
   addSegment(segment: StatusSegment): void {
     const segments = this.data.customSegments || [];
-    const existing = segments.findIndex(s => s.label === segment.label);
+    const existing = segments.findIndex((s) => s.label === segment.label);
 
     if (existing >= 0) {
       segments[existing] = segment;
@@ -149,7 +147,7 @@ export class StatusLine extends EventEmitter {
    */
   removeSegment(label: string): void {
     const segments = this.data.customSegments || [];
-    const filtered = segments.filter(s => s.label !== label);
+    const filtered = segments.filter((s) => s.label !== label);
     this.update({ customSegments: filtered.length > 0 ? filtered : undefined });
   }
 
@@ -341,11 +339,16 @@ export class StatusLine extends EventEmitter {
    */
   private getSegmentColor(color?: string): string {
     switch (color) {
-      case 'success': return '\x1b[32m';
-      case 'warning': return '\x1b[33m';
-      case 'error': return '\x1b[31m';
-      case 'info': return '\x1b[36m';
-      default: return '\x1b[37m';
+      case 'success':
+        return '\x1b[32m';
+      case 'warning':
+        return '\x1b[33m';
+      case 'error':
+        return '\x1b[31m';
+      case 'info':
+        return '\x1b[36m';
+      default:
+        return '\x1b[37m';
     }
   }
 }

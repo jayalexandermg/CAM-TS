@@ -12,8 +12,7 @@
 import { Orchestrator } from '../../src/orchestrator/Orchestrator';
 import { AgentSpawner } from '../../src/agents/AgentSpawner';
 import { Agent } from '../../src/agents/Agent';
-import { AgentDefinition, AgentConfig } from '../../src/agents/types';
-import { TaskRequest } from '../../src/orchestrator/types';
+import { AgentDefinition } from '../../src/agents/types';
 
 describe('Multi-Agent Coordination Integration', () => {
   let orchestrator: Orchestrator;
@@ -171,7 +170,7 @@ describe('Multi-Agent Coordination Integration', () => {
       const root = spawner.spawnByName('coordinator', sessionId);
       const research = spawner.spawnByName('researcher', sessionId, root.getId());
       const code = spawner.spawnByName('coder', sessionId, root.getId());
-      const review = spawner.spawnByName('reviewer', sessionId, code.getId());
+      spawner.spawnByName('reviewer', sessionId, code.getId());
 
       expect(spawner.getChildAgents(root.getId()).length).toBe(2);
       expect(spawner.getChildAgents(code.getId()).length).toBe(1);
@@ -183,8 +182,8 @@ describe('Multi-Agent Coordination Integration', () => {
 
       const root = spawner.spawnByName('coordinator', sessionId);
       const child1 = spawner.spawnByName('researcher', sessionId, root.getId());
-      const child2 = spawner.spawnByName('coder', sessionId, root.getId());
-      const grandchild = spawner.spawnByName('reviewer', sessionId, child1.getId());
+      spawner.spawnByName('coder', sessionId, root.getId());
+      spawner.spawnByName('reviewer', sessionId, child1.getId());
 
       expect(spawner.getAgentCount()).toBe(4);
 

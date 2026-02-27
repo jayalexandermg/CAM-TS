@@ -229,9 +229,7 @@ Examples:
       return this.failure('Please provide a search query');
     }
 
-    const lines: string[] = [
-      `\n=== Search Results for "${query}" ===`,
-    ];
+    const lines: string[] = [`\n=== Search Results for "${query}" ===`];
 
     let learningsCount = 0;
 
@@ -257,8 +255,8 @@ Examples:
     for (const id of activeIds) {
       const transcript = await this.uocs.getSessionTranscript(id);
       if (transcript) {
-        const hasMatch = transcript.turns.some(
-          (turn) => turn.content.toLowerCase().includes(query.toLowerCase())
+        const hasMatch = transcript.turns.some((turn) =>
+          turn.content.toLowerCase().includes(query.toLowerCase())
         );
         if (hasMatch) {
           matchingSessions.push(id);
@@ -328,9 +326,8 @@ Examples:
     ];
 
     // Truncate long content
-    const content = turn.content.length > 200
-      ? turn.content.substring(0, 200) + '...'
-      : turn.content;
+    const content =
+      turn.content.length > 200 ? turn.content.substring(0, 200) + '...' : turn.content;
 
     lines.push(`   ${content}`);
 
@@ -341,9 +338,7 @@ Examples:
    * Format learnings for display
    */
   private formatLearnings(learnings: Learning[]): string {
-    const lines: string[] = [
-      `\n=== Learnings (${learnings.length}) ===`,
-    ];
+    const lines: string[] = [`\n=== Learnings (${learnings.length}) ===`];
 
     for (const learning of learnings) {
       lines.push('');
@@ -365,9 +360,7 @@ Examples:
    * Format decisions for display
    */
   private formatDecisions(decisions: Decision[]): string {
-    const lines: string[] = [
-      `\n=== Decisions (${decisions.length}) ===`,
-    ];
+    const lines: string[] = [`\n=== Decisions (${decisions.length}) ===`];
 
     for (const decision of decisions) {
       lines.push('');

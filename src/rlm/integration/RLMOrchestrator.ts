@@ -66,7 +66,7 @@ export class RLMOrchestrator extends EventEmitter {
       try {
         this.llmClient = new LLMClient({
           provider: 'anthropic',
-          model: 'claude-opus-4-5-20251101',
+          model: process.env.CAM_LLM_MODEL || 'claude-sonnet-4-6',
         });
       } catch {
         // No API key available, will use mock
@@ -112,9 +112,7 @@ export class RLMOrchestrator extends EventEmitter {
   async solve(request: RLMSolveRequest): Promise<RLMSolveResult> {
     // Check concurrency limit
     if (this.activeTasks.size >= this.config.maxConcurrentTasks) {
-      throw new Error(
-        `Maximum concurrent tasks reached (${this.config.maxConcurrentTasks})`
-      );
+      throw new Error(`Maximum concurrent tasks reached (${this.config.maxConcurrentTasks})`);
     }
 
     const taskId = generateId('rlm_task');
@@ -210,9 +208,7 @@ export class RLMOrchestrator extends EventEmitter {
         keyConcepts,
         suggestedApproach,
         canSolveDirectly: isSimple,
-        suggestedDecomposition: isSimple
-          ? undefined
-          : subProblems.map((p) => p.description),
+        suggestedDecomposition: isSimple ? undefined : subProblems.map((p) => p.description),
       };
     } catch (error) {
       return {
@@ -318,10 +314,7 @@ export class RLMOrchestrator extends EventEmitter {
       completedTasks: this.completedTasks,
       failedTasks: this.failedTasks,
       problemsSolved: this.completedTasks,
-      averageSolveTime:
-        this.completedTasks > 0
-          ? this.totalSolveTime / this.completedTasks
-          : 0,
+      averageSolveTime: this.completedTasks > 0 ? this.totalSolveTime / this.completedTasks : 0,
       uptime: Date.now() - this.startTime,
     };
   }
@@ -524,9 +517,7 @@ export class RLMOrchestrator extends EventEmitter {
     parts.push(`## Answer\n${result.solution.answer}`);
 
     if (result.solution.confidence < 0.7) {
-      parts.push(
-        `\n*Note: Confidence level is ${(result.solution.confidence * 100).toFixed(0)}%*`
-      );
+      parts.push(`\n*Note: Confidence level is ${(result.solution.confidence * 100).toFixed(0)}%*`);
     }
 
     if (result.solution.reasoning) {
@@ -549,9 +540,32 @@ export class RLMOrchestrator extends EventEmitter {
    */
   private extractConcepts(query: string): string[] {
     const stopWords = new Set([
-      'the', 'a', 'an', 'is', 'are', 'was', 'were', 'to', 'of', 'and', 'or',
-      'in', 'on', 'at', 'for', 'with', 'what', 'how', 'why', 'when', 'where',
-      'which', 'that', 'this', 'these', 'those',
+      'the',
+      'a',
+      'an',
+      'is',
+      'are',
+      'was',
+      'were',
+      'to',
+      'of',
+      'and',
+      'or',
+      'in',
+      'on',
+      'at',
+      'for',
+      'with',
+      'what',
+      'how',
+      'why',
+      'when',
+      'where',
+      'which',
+      'that',
+      'this',
+      'these',
+      'those',
     ]);
 
     const words = query.toLowerCase().split(/\s+/);

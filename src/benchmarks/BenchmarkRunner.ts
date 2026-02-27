@@ -45,10 +45,7 @@ export class BenchmarkRunner {
   /**
    * Run a single benchmark
    */
-  async run<T>(
-    config: BenchmarkConfig,
-    fn: () => Promise<T> | T
-  ): Promise<BenchmarkResult> {
+  async run<T>(config: BenchmarkConfig, fn: () => Promise<T> | T): Promise<BenchmarkResult> {
     const { name, category, operation, iterations, warmup = 3, targetMs, trackMemory } = config;
 
     // Warmup runs
@@ -95,13 +92,14 @@ export class BenchmarkRunner {
       targetMs,
       passed: timing.avgMs <= targetMs,
       opsPerSecond: 1000 / timing.avgMs,
-      memory: trackMemory && memoryBefore !== undefined && memoryAfter !== undefined
-        ? {
-            heapUsedBefore: memoryBefore,
-            heapUsedAfter: memoryAfter,
-            heapDelta: memoryAfter - memoryBefore,
-          }
-        : undefined,
+      memory:
+        trackMemory && memoryBefore !== undefined && memoryAfter !== undefined
+          ? {
+              heapUsedBefore: memoryBefore,
+              heapUsedAfter: memoryAfter,
+              heapDelta: memoryAfter - memoryBefore,
+            }
+          : undefined,
     };
 
     this.results.push(result);
@@ -158,13 +156,14 @@ export class BenchmarkRunner {
       targetMs,
       passed: timing.avgMs <= targetMs,
       opsPerSecond: 1000 / timing.avgMs,
-      memory: trackMemory && memoryBefore !== undefined && memoryAfter !== undefined
-        ? {
-            heapUsedBefore: memoryBefore,
-            heapUsedAfter: memoryAfter,
-            heapDelta: memoryAfter - memoryBefore,
-          }
-        : undefined,
+      memory:
+        trackMemory && memoryBefore !== undefined && memoryAfter !== undefined
+          ? {
+              heapUsedBefore: memoryBefore,
+              heapUsedAfter: memoryAfter,
+              heapDelta: memoryAfter - memoryBefore,
+            }
+          : undefined,
     };
 
     this.results.push(result);
@@ -223,14 +222,15 @@ export class BenchmarkRunner {
    * Generate a complete benchmark report
    */
   generateReport(): BenchmarkReport {
-    const categories: Record<BenchmarkCategory, { total: number; passed: number; failed: number }> = {
-      'agent-spawn': { total: 0, passed: 0, failed: 0 },
-      'memory-ops': { total: 0, passed: 0, failed: 0 },
-      'skill-routing': { total: 0, passed: 0, failed: 0 },
-      'trait-inference': { total: 0, passed: 0, failed: 0 },
-      'pipeline': { total: 0, passed: 0, failed: 0 },
-      'parallel-execution': { total: 0, passed: 0, failed: 0 },
-    };
+    const categories: Record<BenchmarkCategory, { total: number; passed: number; failed: number }> =
+      {
+        'agent-spawn': { total: 0, passed: 0, failed: 0 },
+        'memory-ops': { total: 0, passed: 0, failed: 0 },
+        'skill-routing': { total: 0, passed: 0, failed: 0 },
+        'trait-inference': { total: 0, passed: 0, failed: 0 },
+        pipeline: { total: 0, passed: 0, failed: 0 },
+        'parallel-execution': { total: 0, passed: 0, failed: 0 },
+      };
 
     let passed = 0;
     let failed = 0;
@@ -312,8 +312,12 @@ export class BenchmarkRunner {
       console.log(`${status} ${result.name}`);
       console.log(`   Operation: ${result.operation}`);
       console.log(`   Avg: ${result.timing.avgMs.toFixed(2)}ms (target: ${result.targetMs}ms)`);
-      console.log(`   Min: ${result.timing.minMs.toFixed(2)}ms | Max: ${result.timing.maxMs.toFixed(2)}ms`);
-      console.log(`   P50: ${result.timing.p50Ms.toFixed(2)}ms | P95: ${result.timing.p95Ms.toFixed(2)}ms | P99: ${result.timing.p99Ms.toFixed(2)}ms`);
+      console.log(
+        `   Min: ${result.timing.minMs.toFixed(2)}ms | Max: ${result.timing.maxMs.toFixed(2)}ms`
+      );
+      console.log(
+        `   P50: ${result.timing.p50Ms.toFixed(2)}ms | P95: ${result.timing.p95Ms.toFixed(2)}ms | P99: ${result.timing.p99Ms.toFixed(2)}ms`
+      );
       console.log(`   Ops/sec: ${result.opsPerSecond.toFixed(2)}`);
       console.log('');
     }

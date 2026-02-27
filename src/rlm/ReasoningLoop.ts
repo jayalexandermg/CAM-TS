@@ -127,14 +127,20 @@ export class ReasoningLoop extends EventEmitter {
    */
   async analyzeProblem(problem: Problem, context: ReasoningContext): Promise<ProblemAnalysis> {
     const stepStart = Date.now();
-    const step = this.createStep('analysis', problem.id, problem.depth, problem.description, context);
+    const step = this.createStep(
+      'analysis',
+      problem.id,
+      problem.depth,
+      problem.description,
+      context
+    );
     this.emit('stepStarted', { step });
 
     // Determine complexity based on problem characteristics
     const complexity = this.assessComplexity(problem);
     const confidence = this.calculateConfidence(problem, complexity);
-    const canSolveDirectly = confidence >= this.config.confidenceThreshold ||
-                             problem.depth >= this.config.maxDepth - 1;
+    const canSolveDirectly =
+      confidence >= this.config.confidenceThreshold || problem.depth >= this.config.maxDepth - 1;
 
     const keyConcepts = this.extractKeyConcepts(problem);
     const dependencies = this.identifyDependencies(keyConcepts);
@@ -145,7 +151,9 @@ export class ReasoningLoop extends EventEmitter {
       confidence,
       canSolveDirectly,
       reasoning: this.generateAnalysisReasoning(problem, complexity, confidence),
-      suggestedDecomposition: canSolveDirectly ? undefined : this.suggestDecomposition(problem, keyConcepts),
+      suggestedDecomposition: canSolveDirectly
+        ? undefined
+        : this.suggestDecomposition(problem, keyConcepts),
       keyConcepts,
       dependencies,
     };
@@ -211,7 +219,13 @@ export class ReasoningLoop extends EventEmitter {
     context: ReasoningContext
   ): Promise<DecompositionResult> {
     const stepStart = Date.now();
-    const step = this.createStep('decomposition', problem.id, problem.depth, problem.description, context);
+    const step = this.createStep(
+      'decomposition',
+      problem.id,
+      problem.depth,
+      problem.description,
+      context
+    );
     this.emit('stepStarted', { step });
 
     const strategy = this.selectDecompositionStrategy(problem, analysis);
@@ -231,10 +245,10 @@ export class ReasoningLoop extends EventEmitter {
     step.output = JSON.stringify({
       strategy,
       subProblemCount: subProblems.length,
-      subProblemIds: subProblems.map(sp => sp.id)
+      subProblemIds: subProblems.map((sp) => sp.id),
     });
     step.duration = Date.now() - stepStart;
-    step.childSteps = subProblems.map(sp => sp.id);
+    step.childSteps = subProblems.map((sp) => sp.id);
     context.trace.steps.push(step);
     context.metrics.decompositionTime += step.duration;
 
@@ -253,7 +267,7 @@ export class ReasoningLoop extends EventEmitter {
     const solutions: Solution[] = [];
 
     // Track max depth
-    const maxSubDepth = Math.max(...subProblems.map(sp => sp.depth));
+    const maxSubDepth = Math.max(...subProblems.map((sp) => sp.depth));
     if (maxSubDepth > context.trace.maxDepthReached) {
       context.trace.maxDepthReached = maxSubDepth;
     }
@@ -263,14 +277,14 @@ export class ReasoningLoop extends EventEmitter {
 
     if (strategy === 'parallel') {
       // Solve independent problems in parallel
-      const independentProblems = subProblems.filter(sp => sp.dependsOn.length === 0);
+      const independentProblems = subProblems.filter((sp) => sp.dependsOn.length === 0);
       const parallelSolutions = await Promise.all(
-        independentProblems.map(sp => this.solve(sp, context))
+        independentProblems.map((sp) => this.solve(sp, context))
       );
       solutions.push(...parallelSolutions);
 
       // Solve dependent problems sequentially
-      const dependentProblems = subProblems.filter(sp => sp.dependsOn.length > 0);
+      const dependentProblems = subProblems.filter((sp) => sp.dependsOn.length > 0);
       for (const sp of dependentProblems) {
         const solution = await this.solve(sp, context);
         solutions.push(solution);
@@ -297,8 +311,13 @@ export class ReasoningLoop extends EventEmitter {
     context: ReasoningContext
   ): Promise<SynthesisResult> {
     const stepStart = Date.now();
-    const step = this.createStep('synthesis', originalProblem.id, originalProblem.depth,
-      `Synthesizing ${subSolutions.length} sub-solutions`, context);
+    const step = this.createStep(
+      'synthesis',
+      originalProblem.id,
+      originalProblem.depth,
+      `Synthesizing ${subSolutions.length} sub-solutions`,
+      context
+    );
     this.emit('stepStarted', { step });
 
     const { synthesisApproach } = decomposition;
@@ -310,11 +329,12 @@ export class ReasoningLoop extends EventEmitter {
         synthesizedAnswer = this.aggregateSolutions(subSolutions);
         quality = this.calculateAverageConfidence(subSolutions);
         break;
-      case 'select_best':
+      case 'select_best': {
         const best = this.selectBestSolution(subSolutions);
         synthesizedAnswer = best.answer;
         quality = best.confidence;
         break;
+      }
       case 'chain':
         synthesizedAnswer = this.chainSolutions(subSolutions);
         quality = this.calculateChainQuality(subSolutions);
@@ -361,7 +381,7 @@ export class ReasoningLoop extends EventEmitter {
   /**
    * Force solve when depth limit reached
    */
-  private forceSolve(problem: Problem, context: ReasoningContext): Solution {
+  private forceSolve(problem: Problem, _context: ReasoningContext): Solution {
     const stepStart = Date.now();
     const answer = this.generateForcedSolution(problem);
 
@@ -383,7 +403,7 @@ export class ReasoningLoop extends EventEmitter {
     problemId: string,
     depth: number,
     input: string,
-    context: ReasoningContext
+    _context: ReasoningContext
   ): ReasoningStep {
     return {
       id: generateId('step'),
@@ -410,12 +430,14 @@ export class ReasoningLoop extends EventEmitter {
   private assessComplexity(problem: Problem): 'simple' | 'moderate' | 'complex' {
     const description = problem.description.toLowerCase();
     const wordCount = description.split(/\s+/).length;
-    const hasMultipleParts = description.includes(' and ') ||
-                             description.includes(' then ') ||
-                             description.includes(' also ');
-    const hasConditionals = description.includes(' if ') ||
-                            description.includes(' when ') ||
-                            description.includes(' unless ');
+    const hasMultipleParts =
+      description.includes(' and ') ||
+      description.includes(' then ') ||
+      description.includes(' also ');
+    const hasConditionals =
+      description.includes(' if ') ||
+      description.includes(' when ') ||
+      description.includes(' unless ');
 
     if (wordCount < 10 && !hasMultipleParts && !hasConditionals) {
       return 'simple';
@@ -426,7 +448,10 @@ export class ReasoningLoop extends EventEmitter {
     return 'complex';
   }
 
-  private calculateConfidence(problem: Problem, complexity: 'simple' | 'moderate' | 'complex'): number {
+  private calculateConfidence(
+    problem: Problem,
+    complexity: 'simple' | 'moderate' | 'complex'
+  ): number {
     const baseConfidence = {
       simple: 0.9,
       moderate: 0.6,
@@ -456,9 +481,26 @@ export class ReasoningLoop extends EventEmitter {
     const words = description.split(/\s+/);
 
     // Simple keyword extraction (in production, use NLP)
-    const stopWords = new Set(['the', 'a', 'an', 'is', 'are', 'was', 'were', 'to', 'of', 'and', 'or', 'in', 'on', 'at', 'for', 'with']);
+    const stopWords = new Set([
+      'the',
+      'a',
+      'an',
+      'is',
+      'are',
+      'was',
+      'were',
+      'to',
+      'of',
+      'and',
+      'or',
+      'in',
+      'on',
+      'at',
+      'for',
+      'with',
+    ]);
     const concepts = words
-      .filter(w => w.length > 3 && !stopWords.has(w))
+      .filter((w) => w.length > 3 && !stopWords.has(w))
       .filter((w, i, arr) => arr.indexOf(w) === i)
       .slice(0, 5);
 
@@ -479,15 +521,15 @@ export class ReasoningLoop extends EventEmitter {
     complexity: 'simple' | 'moderate' | 'complex',
     confidence: number
   ): string {
-    return `Problem analyzed as ${complexity} with ${(confidence * 100).toFixed(0)}% confidence. ` +
-           `Depth: ${problem.depth}/${this.config.maxDepth}.`;
+    return (
+      `Problem analyzed as ${complexity} with ${(confidence * 100).toFixed(0)}% confidence. ` +
+      `Depth: ${problem.depth}/${this.config.maxDepth}.`
+    );
   }
 
   private suggestDecomposition(problem: Problem, keyConcepts: string[]): string[] {
     // Generate sub-problem suggestions based on concepts
-    return keyConcepts.map(concept =>
-      `Sub-problem: Analyze and resolve "${concept}" aspect`
-    );
+    return keyConcepts.map((concept) => `Sub-problem: Analyze and resolve "${concept}" aspect`);
   }
 
   private selectDecompositionStrategy(
@@ -525,18 +567,13 @@ export class ReasoningLoop extends EventEmitter {
     analysis: ProblemAnalysis,
     strategy: DecompositionStrategy
   ): SubProblem[] {
-    const subProblemCount = Math.min(
-      analysis.keyConcepts.length,
-      this.config.maxSubProblems
-    );
+    const subProblemCount = Math.min(analysis.keyConcepts.length, this.config.maxSubProblems);
 
     const subProblems: SubProblem[] = [];
 
     for (let i = 0; i < subProblemCount; i++) {
       const concept = analysis.keyConcepts[i] || `aspect_${i}`;
-      const dependsOn: string[] = strategy === 'sequential' && i > 0
-        ? [subProblems[i - 1].id]
-        : [];
+      const dependsOn: string[] = strategy === 'sequential' && i > 0 ? [subProblems[i - 1].id] : [];
 
       subProblems.push({
         id: generateId('subproblem'),
@@ -558,7 +595,7 @@ export class ReasoningLoop extends EventEmitter {
   private topologicalSort(subProblems: SubProblem[]): SubProblem[] {
     const visited = new Set<string>();
     const result: SubProblem[] = [];
-    const problemMap = new Map(subProblems.map(sp => [sp.id, sp]));
+    const problemMap = new Map(subProblems.map((sp) => [sp.id, sp]));
 
     const visit = (sp: SubProblem): void => {
       if (visited.has(sp.id)) return;
@@ -631,7 +668,7 @@ Provide a direct, actionable solution. Be concise but thorough.`;
     let confidence = analysis.confidence;
 
     // Boost confidence if answer addresses all key concepts
-    const conceptsCovered = analysis.keyConcepts.filter(c =>
+    const conceptsCovered = analysis.keyConcepts.filter((c) =>
       answer.toLowerCase().includes(c.toLowerCase())
     ).length;
 
@@ -641,9 +678,11 @@ Provide a direct, actionable solution. Be concise but thorough.`;
   }
 
   private generateForcedSolution(problem: Problem): string {
-    return `Approximate solution for "${problem.description}": ` +
-           `Due to complexity constraints, providing best-effort response. ` +
-           `Further decomposition may be needed for complete resolution.`;
+    return (
+      `Approximate solution for "${problem.description}": ` +
+      `Due to complexity constraints, providing best-effort response. ` +
+      `Further decomposition may be needed for complete resolution.`
+    );
   }
 
   private aggregateSolutions(solutions: Solution[]): string {
@@ -672,12 +711,15 @@ Provide a direct, actionable solution. Be concise but thorough.`;
   private mergeSolutions(solutions: Solution[], problem: Problem): string {
     const uniqueInsights = new Set<string>();
     for (const sol of solutions) {
-      const sentences = sol.answer.split(/[.!?]+/).filter(s => s.trim().length > 10);
-      sentences.forEach(s => uniqueInsights.add(s.trim()));
+      const sentences = sol.answer.split(/[.!?]+/).filter((s) => s.trim().length > 10);
+      sentences.forEach((s) => uniqueInsights.add(s.trim()));
     }
 
-    return `Merged solution for "${problem.description}":\n` +
-           Array.from(uniqueInsights).join('. ') + '.';
+    return (
+      `Merged solution for "${problem.description}":\n` +
+      Array.from(uniqueInsights).join('. ') +
+      '.'
+    );
   }
 
   private calculateAverageConfidence(solutions: Solution[]): number {
@@ -697,7 +739,7 @@ Provide a direct, actionable solution. Be concise but thorough.`;
 
   private calculateMergeQuality(solutions: Solution[]): number {
     // Merge quality is max of individual confidences minus small penalty
-    const maxConfidence = Math.max(...solutions.map(s => s.confidence));
+    const maxConfidence = Math.max(...solutions.map((s) => s.confidence));
     return maxConfidence * 0.95; // 5% penalty for merging
   }
 }

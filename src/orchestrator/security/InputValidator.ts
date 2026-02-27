@@ -40,7 +40,7 @@ export class InputValidator {
     return {
       valid: errors.length === 0,
       errors,
-      warnings
+      warnings,
     };
   }
 
@@ -67,10 +67,10 @@ export class InputValidator {
       /(\b(SELECT|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|EXEC|EXECUTE)\b)/i,
       /(--|;|\/\*|\*\/)/,
       /(\bOR\b.*=.*)/i,
-      /(\bAND\b.*=.*)/i
+      /(\bAND\b.*=.*)/i,
     ];
 
-    return sqlPatterns.some(pattern => pattern.test(input));
+    return sqlPatterns.some((pattern) => pattern.test(input));
   }
 
   private containsScriptInjection(input: string): boolean {
@@ -78,10 +78,10 @@ export class InputValidator {
       /<script[^>]*>.*<\/script>/i,
       /javascript:/i,
       /on\w+\s*=/i,
-      /<iframe[^>]*>/i
+      /<iframe[^>]*>/i,
     ];
 
-    return scriptPatterns.some(pattern => pattern.test(input));
+    return scriptPatterns.some((pattern) => pattern.test(input));
   }
 
   private hasExcessiveSpecialChars(input: string): boolean {

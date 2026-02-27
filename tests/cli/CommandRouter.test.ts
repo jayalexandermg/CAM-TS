@@ -1,6 +1,5 @@
 import { CommandRouter } from '../../src/cli/CommandRouter';
-import { Command, CommandHandler, CommandResult, BaseCommandHandler } from '../../src/cli/types';
-import { CommandNotFoundError } from '../../src/cli/errors';
+import { Command, CommandResult, BaseCommandHandler } from '../../src/cli/types';
 
 // Mock command handler for testing
 class MockHandler extends BaseCommandHandler {

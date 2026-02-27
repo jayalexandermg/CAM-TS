@@ -58,16 +58,21 @@ export class SkillRouter {
 
     // If preferred skill is specified and matches, use it
     if (preferredSkill) {
-      const preferredMatch = matches.find(m => m.skill.name === preferredSkill);
+      const preferredMatch = matches.find((m) => m.skill.name === preferredSkill);
       if (preferredMatch && preferredMatch.confidence >= minConfidence) {
         const result: RoutingResult = {
           skill: preferredMatch.skill,
           confidence: preferredMatch.confidence,
-          alternatives: matches.filter(m => m.skill.name !== preferredSkill),
+          alternatives: matches.filter((m) => m.skill.name !== preferredSkill),
           routed: true,
           reason: `Matched preferred skill: ${preferredSkill}`,
         };
-        this.recordRouting(request, preferredMatch.skill.name, preferredMatch.confidence, result.reason);
+        this.recordRouting(
+          request,
+          preferredMatch.skill.name,
+          preferredMatch.confidence,
+          result.reason
+        );
         return result;
       }
     }
@@ -92,7 +97,7 @@ export class SkillRouter {
     const ambiguousMatches = this.findAmbiguousMatches(matches, minConfidence);
 
     if (ambiguousMatches.length > 1 && !allowMultiple) {
-      const skillNames = ambiguousMatches.map(m => m.skill.name).join(', ');
+      const skillNames = ambiguousMatches.map((m) => m.skill.name).join(', ');
       const result: RoutingResult = {
         skill: null,
         confidence: topMatch.confidence,
@@ -146,7 +151,12 @@ export class SkillRouter {
    * @param confidence - The confidence score
    * @param reason - The reason for the decision
    */
-  private recordRouting(request: string, skill: string | null, confidence: number, reason: string): void {
+  private recordRouting(
+    request: string,
+    skill: string | null,
+    confidence: number,
+    reason: string
+  ): void {
     this.routingHistory.push({
       timestamp: new Date(),
       request,
@@ -185,9 +195,8 @@ export class SkillRouter {
 
     // Find all matches that are within the ambiguity threshold of the top match
     // and meet the minimum confidence requirement
-    return matches.filter(m =>
-      m.confidence >= minConfidence &&
-      m.confidence >= topConfidence * AMBIGUITY_THRESHOLD
+    return matches.filter(
+      (m) => m.confidence >= minConfidence && m.confidence >= topConfidence * AMBIGUITY_THRESHOLD
     );
   }
 }

@@ -104,11 +104,14 @@ export interface BenchmarkReport {
     totalBenchmarks: number;
     passed: number;
     failed: number;
-    categories: Record<BenchmarkCategory, {
-      total: number;
-      passed: number;
-      failed: number;
-    }>;
+    categories: Record<
+      BenchmarkCategory,
+      {
+        total: number;
+        passed: number;
+        failed: number;
+      }
+    >;
   };
   /** All benchmark results */
   results: BenchmarkResult[];

@@ -147,7 +147,7 @@ export class TaskWatcher extends EventEmitter {
    * Get tasks by status
    */
   getTasksByStatus(status: TaskStatus): TrackedTask[] {
-    return this.getAllTasks().filter(t => t.status === status);
+    return this.getAllTasks().filter((t) => t.status === status);
   }
 
   /**
@@ -168,15 +168,15 @@ export class TaskWatcher extends EventEmitter {
    * Get active tasks (pending or running)
    */
   getActiveTasks(): TrackedTask[] {
-    return this.getAllTasks().filter(t => t.status === 'pending' || t.status === 'running');
+    return this.getAllTasks().filter((t) => t.status === 'pending' || t.status === 'running');
   }
 
   /**
    * Get completed tasks (success, failed, or cancelled)
    */
   getCompletedTasks(): TrackedTask[] {
-    return this.getAllTasks().filter(t =>
-      t.status === 'completed' || t.status === 'failed' || t.status === 'cancelled'
+    return this.getAllTasks().filter(
+      (t) => t.status === 'completed' || t.status === 'failed' || t.status === 'cancelled'
     );
   }
 
@@ -197,7 +197,10 @@ export class TaskWatcher extends EventEmitter {
 
     // If task is already completed, invoke immediately
     const task = this.tasks.get(taskId);
-    if (task && (task.status === 'completed' || task.status === 'failed' || task.status === 'cancelled')) {
+    if (
+      task &&
+      (task.status === 'completed' || task.status === 'failed' || task.status === 'cancelled')
+    ) {
       this.invokeCallback(callback, task);
     }
   }
@@ -285,11 +288,11 @@ export class TaskWatcher extends EventEmitter {
     const tasks = this.getAllTasks();
     return {
       total: tasks.length,
-      pending: tasks.filter(t => t.status === 'pending').length,
-      running: tasks.filter(t => t.status === 'running').length,
-      completed: tasks.filter(t => t.status === 'completed').length,
-      failed: tasks.filter(t => t.status === 'failed').length,
-      cancelled: tasks.filter(t => t.status === 'cancelled').length,
+      pending: tasks.filter((t) => t.status === 'pending').length,
+      running: tasks.filter((t) => t.status === 'running').length,
+      completed: tasks.filter((t) => t.status === 'completed').length,
+      failed: tasks.filter((t) => t.status === 'failed').length,
+      cancelled: tasks.filter((t) => t.status === 'cancelled').length,
     };
   }
 
@@ -327,7 +330,7 @@ export class TaskWatcher extends EventEmitter {
     try {
       const result = callback(task);
       if (result instanceof Promise) {
-        result.catch(error => this.emit('error', error));
+        result.catch((error) => this.emit('error', error));
       }
     } catch (error) {
       this.emit('error', error);
@@ -354,9 +357,7 @@ export class TaskWatcher extends EventEmitter {
     }
 
     // Sort by completion time, oldest first
-    completed.sort((a, b) =>
-      (a.completedAt?.getTime() || 0) - (b.completedAt?.getTime() || 0)
-    );
+    completed.sort((a, b) => (a.completedAt?.getTime() || 0) - (b.completedAt?.getTime() || 0));
 
     // Remove oldest tasks beyond maxHistory
     const toRemove = completed.slice(0, completed.length - this.config.maxHistory);

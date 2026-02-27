@@ -260,7 +260,10 @@ export class SkillTemplate {
 
         case 'keywords':
           if (trimmed && !trimmed.startsWith('{')) {
-            definition.keywords = trimmed.split(',').map((k) => k.trim()).filter(Boolean);
+            definition.keywords = trimmed
+              .split(',')
+              .map((k) => k.trim())
+              .filter(Boolean);
           }
           break;
 
@@ -466,7 +469,10 @@ export class SkillTemplate {
    * @returns Parsed SkillInput or null
    */
   private parseInputRow(row: string): SkillInput | null {
-    const cells = row.split('|').map((c) => c.trim()).filter(Boolean);
+    const cells = row
+      .split('|')
+      .map((c) => c.trim())
+      .filter(Boolean);
     if (cells.length < 4) {
       return null;
     }
@@ -486,7 +492,10 @@ export class SkillTemplate {
    * @returns Parsed SkillOutput or null
    */
   private parseOutputRow(row: string): SkillOutput | null {
-    const cells = row.split('|').map((c) => c.trim()).filter(Boolean);
+    const cells = row
+      .split('|')
+      .map((c) => c.trim())
+      .filter(Boolean);
     if (cells.length < 3) {
       return null;
     }

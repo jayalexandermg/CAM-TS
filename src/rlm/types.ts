@@ -133,19 +133,19 @@ export interface DecompositionResult {
  * Strategy for decomposing problems
  */
 export type DecompositionStrategy =
-  | 'sequential'    // Solve in order
-  | 'parallel'      // Solve independently
-  | 'hierarchical'  // Tree structure
-  | 'iterative';    // Refine progressively
+  | 'sequential' // Solve in order
+  | 'parallel' // Solve independently
+  | 'hierarchical' // Tree structure
+  | 'iterative'; // Refine progressively
 
 /**
  * Approach for synthesizing results
  */
 export type SynthesisApproach =
-  | 'aggregate'     // Combine all results
-  | 'select_best'   // Choose best result
-  | 'chain'         // Each builds on previous
-  | 'merge';        // Merge overlapping results
+  | 'aggregate' // Combine all results
+  | 'select_best' // Choose best result
+  | 'chain' // Each builds on previous
+  | 'merge'; // Merge overlapping results
 
 /**
  * Solution to a problem

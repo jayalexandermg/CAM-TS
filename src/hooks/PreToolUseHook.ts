@@ -6,13 +6,7 @@
  */
 
 import { BaseHookHandler, BaseHookHandlerOptions } from './hook-handler';
-import {
-  HookEvent,
-  EventType,
-  PreToolUseEvent,
-  HookResult,
-  ToolValidationResult,
-} from './types';
+import { HookEvent, EventType, PreToolUseEvent, HookResult, ToolValidationResult } from './types';
 
 // ============================================================================
 // Default Dangerous Patterns

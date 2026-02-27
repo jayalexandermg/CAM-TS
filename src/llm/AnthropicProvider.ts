@@ -13,7 +13,6 @@ import {
   LLMMessage,
   LLMError,
   StreamCallback,
-  StreamingChunk,
   LLMTokenUsage,
 } from './types';
 import { calculateCost, validateConfig } from './LLMConfig';
@@ -176,9 +175,10 @@ export class AnthropicProvider extends EventEmitter {
   /**
    * Format messages for Anthropic API (separate system prompt)
    */
-  private formatMessages(
-    messages: LLMMessage[]
-  ): { systemPrompt: string; messages: Anthropic.MessageParam[] } {
+  private formatMessages(messages: LLMMessage[]): {
+    systemPrompt: string;
+    messages: Anthropic.MessageParam[];
+  } {
     let systemPrompt = '';
     const formattedMessages: Anthropic.MessageParam[] = [];
 

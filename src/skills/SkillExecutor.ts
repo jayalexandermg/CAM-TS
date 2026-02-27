@@ -6,10 +6,7 @@
  */
 
 import { SkillActivator } from './SkillActivator';
-import {
-  ToolDefinition,
-  ToolExecutionResult,
-} from '../orchestrator/llm/ToolSchema';
+import { ToolDefinition, ToolExecutionResult } from '../orchestrator/llm/ToolSchema';
 import { ActiveSkill } from './types';
 
 /**
@@ -127,11 +124,7 @@ export class SkillExecutor {
    * @param definition - Tool definition
    * @param handler - Function to execute the tool
    */
-  registerTool(
-    name: string,
-    definition: ToolDefinition,
-    handler: ToolHandler
-  ): void {
+  registerTool(name: string, definition: ToolDefinition, handler: ToolHandler): void {
     this.toolRegistry.set(name, {
       name,
       definition,
@@ -249,10 +242,7 @@ export class SkillExecutor {
     options?: ToolExecutionOptions
   ): Promise<ToolExecutionResult> {
     try {
-      const result = await this.withTimeout(
-        registered.handler(input),
-        options?.timeout ?? 30000
-      );
+      const result = await this.withTimeout(registered.handler(input), options?.timeout ?? 30000);
       return result;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
@@ -376,9 +366,7 @@ export class SkillExecutor {
 /**
  * Handler function for custom tools
  */
-export type ToolHandler = (
-  input: Record<string, unknown>
-) => Promise<ToolExecutionResult>;
+export type ToolHandler = (input: Record<string, unknown>) => Promise<ToolExecutionResult>;
 
 /**
  * Registered tool with handler

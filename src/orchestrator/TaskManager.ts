@@ -96,8 +96,7 @@ export class TaskManager extends EventEmitter {
 
     task.status = 'completed';
     task.metadata.endTime = new Date();
-    task.metadata.duration =
-      task.metadata.endTime.getTime() - task.metadata.startTime.getTime();
+    task.metadata.duration = task.metadata.endTime.getTime() - task.metadata.startTime.getTime();
 
     task.result = {
       taskId: id,
@@ -119,8 +118,7 @@ export class TaskManager extends EventEmitter {
 
     task.status = 'failed';
     task.metadata.endTime = new Date();
-    task.metadata.duration =
-      task.metadata.endTime.getTime() - task.metadata.startTime.getTime();
+    task.metadata.duration = task.metadata.endTime.getTime() - task.metadata.startTime.getTime();
 
     task.result = {
       taskId: id,
@@ -175,9 +173,7 @@ export class TaskManager extends EventEmitter {
   }
 
   getTasksBySession(sessionId: string): Task[] {
-    return Array.from(this.tasks.values()).filter(
-      (t) => t.request.sessionId === sessionId
-    );
+    return Array.from(this.tasks.values()).filter((t) => t.request.sessionId === sessionId);
   }
 
   getStats(): { pending: number; running: number; completed: number; failed: number } {

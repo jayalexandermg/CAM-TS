@@ -10,22 +10,12 @@
 /**
  * Status of a sandbox instance
  */
-export type SandboxStatus =
-  | 'idle'
-  | 'active'
-  | 'paused'
-  | 'completed'
-  | 'rolled_back'
-  | 'error';
+export type SandboxStatus = 'idle' | 'active' | 'paused' | 'completed' | 'rolled_back' | 'error';
 
 /**
  * Type of state change
  */
-export type StateChangeType =
-  | 'create'
-  | 'update'
-  | 'delete'
-  | 'read';
+export type StateChangeType = 'create' | 'update' | 'delete' | 'read';
 
 /**
  * A single state change entry
@@ -109,9 +99,9 @@ export interface SandboxConfig {
  * Level of isolation for sandbox execution
  */
 export type IsolationLevel =
-  | 'strict'      // Complete isolation, no external access
-  | 'permissive'  // Allow read-only external access
-  | 'shared';     // Allow controlled shared state
+  | 'strict' // Complete isolation, no external access
+  | 'permissive' // Allow read-only external access
+  | 'shared'; // Allow controlled shared state
 
 /**
  * Result of sandbox execution
@@ -176,9 +166,7 @@ export interface SandboxEvents {
 /**
  * Function type for sandbox execution
  */
-export type SandboxExecutor<T> = (
-  state: SandboxState
-) => T | Promise<T>;
+export type SandboxExecutor<T> = (state: SandboxState) => T | Promise<T>;
 
 /**
  * Interface for interacting with sandbox state

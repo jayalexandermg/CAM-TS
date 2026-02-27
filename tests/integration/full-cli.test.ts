@@ -16,7 +16,6 @@ import { InteractiveMode } from '../../src/cli/InteractiveMode';
 import { OrchestratorBridge } from '../../src/cli/OrchestratorBridge';
 import { CommandRouter } from '../../src/cli/CommandRouter';
 import { SessionManager } from '../../src/cli/session/SessionManager';
-import { Session } from '../../src/cli/session/Session';
 import { PersonaManager } from '../../src/persona/PersonaManager';
 import { HookEventEmitter } from '../../src/hooks/event-emitter';
 import { StatusCommand } from '../../src/cli/commands/StatusCommand';
@@ -25,7 +24,7 @@ import { HelpCommand } from '../../src/cli/commands/HelpCommand';
 import { Orchestrator } from '../../src/orchestrator/Orchestrator';
 import { UOCS } from '../../src/history/UOCS';
 import { HistoryStorage } from '../../src/history/HistoryStorage';
-import { Readable, Writable } from 'stream';
+import { Readable } from 'stream';
 
 describe('Full CLI Integration', () => {
   let tempDir: string;

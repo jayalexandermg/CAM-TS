@@ -87,12 +87,7 @@ async function runInteractive(): Promise<void> {
   const hookEmitter = new HookEventEmitter({ throwOnErrors: false });
   const router = createRouter();
 
-  const interactive = new InteractiveMode(
-    router,
-    sessionManager,
-    personaManager,
-    hookEmitter
-  );
+  const interactive = new InteractiveMode(router, sessionManager, personaManager, hookEmitter);
 
   await interactive.start();
 }

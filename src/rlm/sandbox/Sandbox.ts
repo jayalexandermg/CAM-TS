@@ -321,10 +321,7 @@ export class Sandbox extends EventEmitter {
    */
   fork(config?: Partial<SandboxConfig>): Sandbox {
     const forkedState = this.stateManager.getStateMap();
-    return new Sandbox(
-      { ...this.config, isolationLevel: 'shared', ...config },
-      forkedState
-    );
+    return new Sandbox({ ...this.config, isolationLevel: 'shared', ...config }, forkedState);
   }
 
   /**
@@ -376,7 +373,10 @@ export class Sandbox extends EventEmitter {
   /**
    * Compare two snapshots
    */
-  compareSnapshots(snapshotId1: string, snapshotId2: string): {
+  compareSnapshots(
+    snapshotId1: string,
+    snapshotId2: string
+  ): {
     added: string[];
     removed: string[];
     modified: string[];
@@ -412,9 +412,9 @@ export class Sandbox extends EventEmitter {
    */
   private updateMetrics(duration: number): void {
     this.metrics.executionTime = duration;
-    this.metrics.changeCount = this.stateManager.getChanges().filter(
-      (c) => !c.metadata?.isMarker
-    ).length;
+    this.metrics.changeCount = this.stateManager
+      .getChanges()
+      .filter((c) => !c.metadata?.isMarker).length;
     this.metrics.snapshotCount = this.rollbackManager.getSnapshotCount();
     this.metrics.peakStateSize = Math.max(
       this.metrics.peakStateSize,

@@ -213,16 +213,6 @@ export class RLMEngine extends EventEmitter {
       context,
     };
 
-    const analysis = {
-      problem,
-      complexity: 'simple' as const,
-      confidence: 0.9,
-      canSolveDirectly: true,
-      reasoning: 'Simple problem, solving directly',
-      keyConcepts: this.extractBasicConcepts(query),
-      dependencies: [],
-    };
-
     const startTime = Date.now();
     const answer = this.generateSimpleSolution(query, context);
 
@@ -242,9 +232,10 @@ export class RLMEngine extends EventEmitter {
    */
   isSimpleProblem(query: string): boolean {
     const wordCount = query.split(/\s+/).length;
-    const hasComplexity = query.toLowerCase().includes(' and ') ||
-                          query.toLowerCase().includes(' then ') ||
-                          query.toLowerCase().includes(' if ');
+    const hasComplexity =
+      query.toLowerCase().includes(' and ') ||
+      query.toLowerCase().includes(' then ') ||
+      query.toLowerCase().includes(' if ');
 
     return wordCount < 15 && !hasComplexity;
   }
@@ -261,7 +252,7 @@ export class RLMEngine extends EventEmitter {
     };
 
     const concepts = this.extractBasicConcepts(query);
-    const subProblems: Problem[] = concepts.map((concept, index) => ({
+    const subProblems: Problem[] = concepts.map((concept) => ({
       id: generateId('subproblem'),
       description: `Analyze: ${concept} in context of "${query.substring(0, 50)}..."`,
       depth: 1,
@@ -359,13 +350,35 @@ export class RLMEngine extends EventEmitter {
   private extractBasicConcepts(query: string): string[] {
     const words = query.toLowerCase().split(/\s+/);
     const stopWords = new Set([
-      'the', 'a', 'an', 'is', 'are', 'was', 'were', 'to', 'of',
-      'and', 'or', 'in', 'on', 'at', 'for', 'with', 'what', 'how',
-      'why', 'when', 'where', 'which', 'that', 'this', 'these'
+      'the',
+      'a',
+      'an',
+      'is',
+      'are',
+      'was',
+      'were',
+      'to',
+      'of',
+      'and',
+      'or',
+      'in',
+      'on',
+      'at',
+      'for',
+      'with',
+      'what',
+      'how',
+      'why',
+      'when',
+      'where',
+      'which',
+      'that',
+      'this',
+      'these',
     ]);
 
     return words
-      .filter(w => w.length > 3 && !stopWords.has(w))
+      .filter((w) => w.length > 3 && !stopWords.has(w))
       .filter((w, i, arr) => arr.indexOf(w) === i)
       .slice(0, 4);
   }
@@ -421,7 +434,7 @@ export class RLMEngine extends EventEmitter {
     return {
       target: 'solution',
       targetId: solution.problemId,
-      valid: issues.filter(i => i.severity === 'error').length === 0,
+      valid: issues.filter((i) => i.severity === 'error').length === 0,
       issues,
       qualityScore: this.calculateQualityScore(solution, issues),
     };
@@ -440,7 +453,7 @@ export class RLMEngine extends EventEmitter {
     }
 
     // Check for analysis step
-    const hasAnalysis = trace.steps.some(s => s.type === 'analysis');
+    const hasAnalysis = trace.steps.some((s) => s.type === 'analysis');
     if (!hasAnalysis) {
       issues.push({
         severity: 'warning',
@@ -462,7 +475,7 @@ export class RLMEngine extends EventEmitter {
     }
 
     // Check depth progression
-    const maxDepth = Math.max(...trace.steps.map(s => s.depth));
+    const maxDepth = Math.max(...trace.steps.map((s) => s.depth));
     if (maxDepth > this.config.maxDepth) {
       issues.push({
         severity: 'error',
@@ -474,9 +487,9 @@ export class RLMEngine extends EventEmitter {
     return {
       target: 'chain',
       targetId: trace.id,
-      valid: issues.filter(i => i.severity === 'error').length === 0,
+      valid: issues.filter((i) => i.severity === 'error').length === 0,
       issues,
-      qualityScore: 1 - (issues.length * 0.1),
+      qualityScore: 1 - issues.length * 0.1,
     };
   }
 
@@ -516,7 +529,7 @@ export class RLMEngine extends EventEmitter {
     return {
       target: 'step',
       targetId: step.id,
-      valid: issues.filter(i => i.severity === 'error').length === 0,
+      valid: issues.filter((i) => i.severity === 'error').length === 0,
       issues,
       qualityScore: step.confidence,
     };

@@ -35,9 +35,7 @@ export class RLMCommand extends BaseCommandHandler {
       case 'clear':
         return this.handleClear(command);
       default:
-        return this.failure(
-          `Unknown RLM subcommand: ${subcommand}\n\n${this.getHelp()}`
-        );
+        return this.failure(`Unknown RLM subcommand: ${subcommand}\n\n${this.getHelp()}`);
     }
   }
 
@@ -80,9 +78,7 @@ Examples:
    */
   private async handleSolve(command: Command): Promise<CommandResult> {
     // Get query from positional args (skip 'solve' if present)
-    const queryParts = command.positional.slice(
-      command.positional[0] === 'solve' ? 1 : 0
-    );
+    const queryParts = command.positional.slice(command.positional[0] === 'solve' ? 1 : 0);
 
     if (queryParts.length === 0) {
       return this.failure('Missing query. Usage: rlm solve <query>');
@@ -111,14 +107,10 @@ Examples:
         const output = this.formatSolveResult(result, duration);
         return this.success(output);
       } else {
-        return this.failure(
-          `Solving failed: ${result.error?.message || 'Unknown error'}`
-        );
+        return this.failure(`Solving failed: ${result.error?.message || 'Unknown error'}`);
       }
     } catch (error) {
-      return this.failure(
-        `Error: ${error instanceof Error ? error.message : String(error)}`
-      );
+      return this.failure(`Error: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
@@ -127,9 +119,7 @@ Examples:
    */
   private async handleAnalyze(command: Command): Promise<CommandResult> {
     // Get query from positional args
-    const queryParts = command.positional.slice(
-      command.positional[0] === 'analyze' ? 1 : 0
-    );
+    const queryParts = command.positional.slice(command.positional[0] === 'analyze' ? 1 : 0);
 
     if (queryParts.length === 0) {
       return this.failure('Missing query. Usage: rlm analyze <query>');
@@ -151,14 +141,10 @@ Examples:
         const output = this.formatAnalyzeResult(result);
         return this.success(output);
       } else {
-        return this.failure(
-          `Analysis failed: ${result.error?.message || 'Unknown error'}`
-        );
+        return this.failure(`Analysis failed: ${result.error?.message || 'Unknown error'}`);
       }
     } catch (error) {
-      return this.failure(
-        `Error: ${error instanceof Error ? error.message : String(error)}`
-      );
+      return this.failure(`Error: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
@@ -170,12 +156,13 @@ Examples:
     const contextStats = this.orchestrator.getContextManager().getStats();
     const usingRealLLM = this.orchestrator.isUsingRealLLM();
 
+    const model = process.env.CAM_LLM_MODEL || 'claude-sonnet-4-6';
     const output = `
 RLM Orchestrator Status
 =======================
 
 LLM:
-  Provider:  ${usingRealLLM ? 'Anthropic (Claude Opus 4.5)' : 'Mock'}
+  Provider:  ${usingRealLLM ? `Anthropic (${model})` : 'Mock'}
   Status:    ${usingRealLLM ? 'Connected' : 'No API key'}
 
 Tasks:
@@ -216,9 +203,7 @@ Context:
         this.orchestrator.clearCache();
         return this.success('Context and cache cleared.');
       default:
-        return this.failure(
-          `Unknown clear target: ${target}. Use: context, cache, or all`
-        );
+        return this.failure(`Unknown clear target: ${target}. Use: context, cache, or all`);
     }
   }
 
@@ -310,9 +295,7 @@ Context:
   /**
    * Parse analysis depth
    */
-  private parseDepth(
-    value: string | undefined
-  ): 'shallow' | 'medium' | 'deep' | undefined {
+  private parseDepth(value: string | undefined): 'shallow' | 'medium' | 'deep' | undefined {
     if (!value) return undefined;
     const lower = value.toLowerCase();
     if (lower === 'shallow' || lower === 'medium' || lower === 'deep') {
