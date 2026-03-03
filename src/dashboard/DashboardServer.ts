@@ -34,10 +34,13 @@ export class DashboardServer {
     this.app.use((_req: Request, res: Response, next) => {
       res.header('Access-Control-Allow-Origin', '*');
       res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+      res.header('X-Content-Type-Options', 'nosniff');
+      res.header('X-Frame-Options', 'DENY');
+      res.header('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'");
       next();
     });
 
-    this.app.use(express.json());
+    this.app.use(express.json({ limit: '100kb' }));
 
     // Serve static files from public directory
     const publicDir = path.join(__dirname, 'public');

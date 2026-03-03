@@ -97,7 +97,7 @@ export class DashboardServer extends EventEmitter {
    */
   private setupMiddleware(): void {
     // JSON body parsing
-    this.app.use(express.json());
+    this.app.use(express.json({ limit: '100kb' }));
 
     // CORS for development
     if (this.config.enableCors) {
@@ -105,6 +105,9 @@ export class DashboardServer extends EventEmitter {
         res.header('Access-Control-Allow-Origin', '*');
         res.header('Access-Control-Allow-Headers', 'Content-Type');
         res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+        res.header('X-Content-Type-Options', 'nosniff');
+        res.header('X-Frame-Options', 'DENY');
+        res.header('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'");
         next();
       });
     }

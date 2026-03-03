@@ -97,7 +97,6 @@ describe('AuditLogger', () => {
       expect(event.error).toBeDefined();
       expect(event.error?.message).toBe('Something went wrong');
       expect(event.error?.code).toBe('ERR_TEST');
-      expect(event.error?.stack).toContain('Something went wrong');
     });
 
     it('should log agent spawn events', async () => {

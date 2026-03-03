@@ -73,7 +73,6 @@ export class AuditLogger {
       error: options?.error
         ? {
             message: options.error.message,
-            stack: options.error.stack,
             code: (options.error as Error & { code?: string }).code,
           }
         : undefined,
