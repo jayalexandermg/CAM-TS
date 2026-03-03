@@ -10,6 +10,17 @@ export { SkillParser } from './SkillParser';
 export { IntentMatcher } from './IntentMatcher';
 export { SkillRouter } from './SkillRouter';
 export { SkillActivator } from './SkillActivator';
+export { SkillExecutor, WorkflowExecutionResult, ToolExecutionOptions } from './SkillExecutor';
+export { ToolRegistry, ToolHandler, ToolRegistryResult } from './ToolRegistry';
+export { SkillLibrary, SkillPool, SkillPoolName, LibraryScanResult } from './SkillLibrary';
+export {
+  SkillPerformanceTracker,
+  SkillMetrics,
+  PromotionCheck,
+  ComparisonResult,
+  InvocationRecord,
+} from './SkillPerformanceTracker';
+export { GapDetector, CapabilityGap, GapReport } from './GapDetector';
 export {
   Skill,
   SkillDefinition,

@@ -27,3 +27,22 @@ export { CoreManager, CoreContext, CoreManagerOptions } from './core';
 
 // Memory pipeline exports
 export { MemoryPipeline, MemoryTier, TierValidationResult, PromotionResult } from './pipeline';
+
+// Hierarchical memory exports
+export {
+  MemoryLayer,
+  HierarchicalEntry,
+  QueryOptions,
+  RetrievalResult,
+  RetrievalStats,
+  StoreConfig,
+  HierarchicalStore,
+  DepthOnDemandRetriever,
+  RetrievalOptions,
+  SummaryGenerator,
+  GeneratedLayers,
+  LLMClient,
+} from './hierarchical';
+
+// Crystallization exports
+export { CrystallizationEngine, Crystal } from './crystallization';

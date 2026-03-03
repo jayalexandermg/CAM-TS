@@ -112,3 +112,6 @@ export type {
   AgentReasoningResult,
   RLMOrchestratorEvents,
 } from './integration';
+
+// Reasoning threads
+export * from './threads';

@@ -2,12 +2,15 @@
  * SkillExecutor - Execute skill tools and workflows
  *
  * Provides the execution layer for skills. When an agent requests a tool,
- * the SkillExecutor finds and runs the appropriate skill tool.
+ * the SkillExecutor finds and runs the appropriate skill tool via ToolRegistry.
+ * Optional GuardrailEngine integration enforces safety constraints before execution.
  */
 
 import { SkillActivator } from './SkillActivator';
 import { ToolDefinition, ToolExecutionResult } from '../orchestrator/llm/ToolSchema';
 import { ActiveSkill } from './types';
+import { ToolRegistry } from './ToolRegistry';
+import { GuardrailEngine } from '../guardrails/GuardrailEngine';
 
 /**
  * Result of executing a workflow
@@ -36,11 +39,33 @@ export interface ToolExecutionOptions {
  */
 export class SkillExecutor {
   private readonly skillActivator: SkillActivator;
-  private readonly toolRegistry: Map<string, RegisteredTool>;
+  private readonly localToolRegistry: Map<string, RegisteredTool>;
+  private externalToolRegistry: ToolRegistry | null;
+  private guardrailEngine: GuardrailEngine | null;
 
-  constructor(skillActivator: SkillActivator) {
+  constructor(
+    skillActivator: SkillActivator,
+    toolRegistry?: ToolRegistry,
+    guardrailEngine?: GuardrailEngine
+  ) {
     this.skillActivator = skillActivator;
-    this.toolRegistry = new Map();
+    this.localToolRegistry = new Map();
+    this.externalToolRegistry = toolRegistry ?? null;
+    this.guardrailEngine = guardrailEngine ?? null;
+  }
+
+  /**
+   * Set the external ToolRegistry (for late binding)
+   */
+  setToolRegistry(registry: ToolRegistry): void {
+    this.externalToolRegistry = registry;
+  }
+
+  /**
+   * Set the GuardrailEngine (for late binding)
+   */
+  setGuardrailEngine(engine: GuardrailEngine): void {
+    this.guardrailEngine = engine;
   }
 
   /**
@@ -56,10 +81,21 @@ export class SkillExecutor {
     input: Record<string, unknown>,
     options?: ToolExecutionOptions
   ): Promise<ToolExecutionResult> {
-    // Check if tool is registered
-    const registered = this.toolRegistry.get(toolName);
+    // Run guardrail check if engine is available
+    const guardrailCheck = this.checkGuardrails(toolName, input);
+    if (guardrailCheck) {
+      return guardrailCheck;
+    }
+
+    // Check local registered tools first
+    const registered = this.localToolRegistry.get(toolName);
     if (registered) {
       return this.executeRegisteredTool(registered, input, options);
+    }
+
+    // Check external ToolRegistry
+    if (this.externalToolRegistry?.hasTool(toolName)) {
+      return this.executeViaToolRegistry(toolName, input, options);
     }
 
     // Check active skills for the tool
@@ -71,11 +107,11 @@ export class SkillExecutor {
       }
     }
 
-    // Tool not found
+    // Tool not found — clear error, no fake results
     return {
       success: false,
-      result: `Tool not found: ${toolName}`,
-      error: `No active skill provides tool: ${toolName}`,
+      result: `ToolNotFoundError: Tool "${toolName}" is not registered`,
+      error: `ToolNotFoundError: Tool "${toolName}" is not registered. No active skill provides this tool.`,
     };
   }
 
@@ -125,7 +161,7 @@ export class SkillExecutor {
    * @param handler - Function to execute the tool
    */
   registerTool(name: string, definition: ToolDefinition, handler: ToolHandler): void {
-    this.toolRegistry.set(name, {
+    this.localToolRegistry.set(name, {
       name,
       definition,
       handler,
@@ -136,7 +172,7 @@ export class SkillExecutor {
    * Unregister a custom tool
    */
   unregisterTool(name: string): void {
-    this.toolRegistry.delete(name);
+    this.localToolRegistry.delete(name);
   }
 
   /**
@@ -150,7 +186,7 @@ export class SkillExecutor {
     const definitions: ToolDefinition[] = [];
 
     // Add registered tools
-    for (const registered of this.toolRegistry.values()) {
+    for (const registered of this.localToolRegistry.values()) {
       definitions.push(registered.definition);
     }
 
@@ -165,7 +201,11 @@ export class SkillExecutor {
    * Check if a tool is available
    */
   isToolAvailable(toolName: string): boolean {
-    if (this.toolRegistry.has(toolName)) {
+    if (this.localToolRegistry.has(toolName)) {
+      return true;
+    }
+
+    if (this.externalToolRegistry?.hasTool(toolName)) {
       return true;
     }
 
@@ -196,6 +236,38 @@ export class SkillExecutor {
   // =========================================================================
   // Private Methods
   // =========================================================================
+
+  /**
+   * Check guardrails before tool execution.
+   * Returns a ToolExecutionResult if blocked, null if allowed.
+   */
+  private checkGuardrails(
+    toolName: string,
+    input: Record<string, unknown>
+  ): ToolExecutionResult | null {
+    if (!this.guardrailEngine) return null;
+
+    const result = this.guardrailEngine.evaluate({
+      operation: 'tool_execute',
+      tool: toolName,
+      path: typeof input.path === 'string' ? input.path : undefined,
+      content: typeof input.content === 'string' ? input.content : undefined,
+      metadata: { toolInput: input },
+    });
+
+    if (!result.allowed) {
+      const violationMessages = result.violations
+        .map((v) => v.message)
+        .join('; ');
+      return {
+        success: false,
+        result: `Guardrail violation: ${violationMessages}`,
+        error: `Tool "${toolName}" blocked by guardrails: ${violationMessages}`,
+      };
+    }
+
+    return null;
+  }
 
   private findToolInSkill(activeSkill: ActiveSkill, toolName: string): SkillTool | null {
     // Tools in skills are file paths - check if tool name matches
@@ -230,9 +302,9 @@ export class SkillExecutor {
     return null;
   }
 
-  private extractToolName(path: string): string {
+  private extractToolName(toolPath: string): string {
     // Extract name from path like "tools/search.ts" -> "search"
-    const fileName = path.split('/').pop() || path;
+    const fileName = toolPath.split('/').pop() || toolPath;
     return fileName.replace(/\.(ts|js|json)$/, '');
   }
 
@@ -254,94 +326,167 @@ export class SkillExecutor {
     }
   }
 
-  private async executeSkillTool(
-    activeSkill: ActiveSkill,
-    tool: SkillTool,
+  /**
+   * Execute a tool via the external ToolRegistry
+   */
+  private async executeViaToolRegistry(
+    toolName: string,
     input: Record<string, unknown>,
-    _options?: ToolExecutionOptions
+    options?: ToolExecutionOptions
   ): Promise<ToolExecutionResult> {
-    // For now, skill tools return a simulated result
-    // In a full implementation, this would load and execute the tool module
     try {
-      const result = await this.simulateToolExecution(tool.name, input, activeSkill);
+      const registryPromise = this.externalToolRegistry!.executeTool(toolName, input);
+      const registryResult = await this.withTimeout(
+        registryPromise,
+        options?.timeout ?? 30000
+      );
       return {
-        success: true,
-        result,
-        metadata: {
-          skill: activeSkill.skill.name,
-          tool: tool.name,
-        },
+        success: registryResult.success,
+        result: typeof registryResult.output === 'string'
+          ? registryResult.output
+          : JSON.stringify(registryResult.output),
+        error: registryResult.error,
+        metadata: { executionTime: registryResult.executionTime },
       };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       return {
         success: false,
-        result: `Skill tool execution failed: ${errorMessage}`,
+        result: `Tool execution failed: ${errorMessage}`,
         error: errorMessage,
       };
     }
   }
 
+  /**
+   * Execute a skill tool via ToolRegistry lookup.
+   * If the tool is registered in the external registry, execute it there.
+   * Otherwise return a clear error — no fake/simulated results.
+   */
+  private async executeSkillTool(
+    activeSkill: ActiveSkill,
+    tool: SkillTool,
+    input: Record<string, unknown>,
+    options?: ToolExecutionOptions
+  ): Promise<ToolExecutionResult> {
+    // Try external ToolRegistry first
+    if (this.externalToolRegistry?.hasTool(tool.name)) {
+      const result = await this.executeViaToolRegistry(tool.name, input, options);
+      return {
+        ...result,
+        metadata: {
+          ...result.metadata,
+          skill: activeSkill.skill.name,
+          tool: tool.name,
+        },
+      };
+    }
+
+    // No registered handler — return clear error
+    return {
+      success: false,
+      result: `ToolNotFoundError: Tool "${tool.name}" from skill "${activeSkill.skill.name}" has no registered handler`,
+      error: `ToolNotFoundError: Tool "${tool.name}" is not registered in the ToolRegistry. Register a handler before execution.`,
+    };
+  }
+
+  /**
+   * Execute a workflow by iterating through its steps via ToolRegistry.
+   * Each workflow step's tools are executed sequentially.
+   * If any step fails, execution stops and partial results are returned.
+   */
   private async executeSkillWorkflow(
     activeSkill: ActiveSkill,
     workflow: SkillWorkflow,
     input: Record<string, unknown>
   ): Promise<WorkflowExecutionResult> {
-    // Placeholder workflow execution
+    // Workflow steps correspond to the tool files in the skill
+    const toolNames = activeSkill.tools.map((t) => this.extractToolName(t));
+    const totalSteps = toolNames.length;
+
+    if (totalSteps === 0) {
+      return {
+        success: false,
+        output: '',
+        stepsCompleted: 0,
+        totalSteps: 0,
+        error: `Workflow "${workflow.name}" has no tool steps to execute`,
+      };
+    }
+
+    const stepResults: Array<{ tool: string; result: ToolExecutionResult }> = [];
+    let currentInput = { ...input };
+
+    for (let i = 0; i < totalSteps; i++) {
+      const toolName = toolNames[i];
+
+      // Run guardrail check per step
+      const guardrailCheck = this.checkGuardrails(toolName, currentInput);
+      if (guardrailCheck) {
+        return {
+          success: false,
+          output: JSON.stringify(stepResults.map((r) => r.result.result)),
+          stepsCompleted: i,
+          totalSteps,
+          error: `Guardrail blocked step ${i + 1} (${toolName}): ${guardrailCheck.error}`,
+          metadata: {
+            skill: activeSkill.skill.name,
+            workflow: workflow.name,
+            stepResults,
+          },
+        };
+      }
+
+      let stepResult: ToolExecutionResult;
+
+      if (this.externalToolRegistry?.hasTool(toolName)) {
+        stepResult = await this.executeViaToolRegistry(toolName, currentInput);
+      } else {
+        stepResult = {
+          success: false,
+          result: `ToolNotFoundError: Tool "${toolName}" is not registered`,
+          error: `ToolNotFoundError: Tool "${toolName}" is not registered in the ToolRegistry`,
+        };
+      }
+
+      stepResults.push({ tool: toolName, result: stepResult });
+
+      if (!stepResult.success) {
+        return {
+          success: false,
+          output: JSON.stringify(stepResults.map((r) => r.result.result)),
+          stepsCompleted: i,
+          totalSteps,
+          error: `Workflow failed at step ${i + 1} (${toolName}): ${stepResult.error}`,
+          metadata: {
+            skill: activeSkill.skill.name,
+            workflow: workflow.name,
+            stepResults,
+          },
+        };
+      }
+
+      // Pass previous step output as input to next step
+      if (typeof stepResult.result === 'string') {
+        try {
+          currentInput = { ...currentInput, previousStepOutput: JSON.parse(stepResult.result) };
+        } catch {
+          currentInput = { ...currentInput, previousStepOutput: stepResult.result };
+        }
+      }
+    }
+
     return {
       success: true,
-      output: `Workflow ${workflow.name} executed for skill ${activeSkill.skill.name}`,
-      stepsCompleted: 1,
-      totalSteps: 1,
+      output: JSON.stringify(stepResults.map((r) => r.result.result)),
+      stepsCompleted: totalSteps,
+      totalSteps,
       metadata: {
         skill: activeSkill.skill.name,
         workflow: workflow.name,
-        input,
+        stepResults,
       },
     };
-  }
-
-  private async simulateToolExecution(
-    toolName: string,
-    input: Record<string, unknown>,
-    activeSkill: ActiveSkill
-  ): Promise<string> {
-    // Simulate different tool behaviors based on name
-    const toolLower = toolName.toLowerCase();
-
-    if (toolLower.includes('search') || toolLower.includes('find')) {
-      return JSON.stringify({
-        query: input.query || input.term || 'unknown',
-        results: [
-          { title: 'Result 1', relevance: 0.95 },
-          { title: 'Result 2', relevance: 0.82 },
-        ],
-        skill: activeSkill.skill.name,
-      });
-    }
-
-    if (toolLower.includes('read') || toolLower.includes('get')) {
-      return JSON.stringify({
-        content: `Content retrieved for ${JSON.stringify(input)}`,
-        skill: activeSkill.skill.name,
-      });
-    }
-
-    if (toolLower.includes('write') || toolLower.includes('create')) {
-      return JSON.stringify({
-        created: true,
-        path: input.path || 'unknown',
-        skill: activeSkill.skill.name,
-      });
-    }
-
-    // Default response
-    return JSON.stringify({
-      tool: toolName,
-      input,
-      result: 'executed',
-      skill: activeSkill.skill.name,
-    });
   }
 
   private async withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {

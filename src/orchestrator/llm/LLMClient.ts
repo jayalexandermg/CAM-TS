@@ -10,7 +10,7 @@ import { EventEmitter } from 'events';
 import Anthropic from '@anthropic-ai/sdk';
 import { LLMConfig, LLMRequest, LLMResponse, LLMMessage, StreamCallback } from './types';
 import { AnthropicProvider } from '../../llm/AnthropicProvider';
-import { createConfig, calculateCost, DEFAULT_MODEL } from '../../llm/LLMConfig';
+import { createConfig, calculateCost } from '../../llm/LLMConfig';
 import {
   ToolDefinition,
   ToolUseResponse,
@@ -24,6 +24,9 @@ import {
   createToolResult,
   requiresToolUse,
 } from './ToolSchema';
+
+/** Default model for orchestrator LLM client, overridable via CAM_DEFAULT_MODEL env var */
+const ORCHESTRATOR_DEFAULT_MODEL = process.env.CAM_DEFAULT_MODEL || 'claude-sonnet-4-6';
 
 export class LLMClient extends EventEmitter {
   private config: LLMConfig;
@@ -46,7 +49,7 @@ export class LLMClient extends EventEmitter {
       temperature: 0.7,
       ...config,
       provider: effectiveProvider,
-      model: config.model || DEFAULT_MODEL,
+      model: config.model || ORCHESTRATOR_DEFAULT_MODEL,
     });
 
     // Initialize real provider if using Anthropic

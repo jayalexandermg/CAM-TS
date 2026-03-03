@@ -30,6 +30,9 @@ import { IntentMatcher } from '../skills/IntentMatcher';
 import { CoreManager } from '../memory/core/CoreManager';
 import { PrepromptInjector } from '../context/PrepromptInjector';
 import { PrepromptHydrator } from '../context/PrepromptHydrator';
+import { GuardrailEngine } from '../guardrails/GuardrailEngine';
+import { GuardrailCheckInput } from '../guardrails/types';
+import { DecisionTrace } from './DecisionTrace';
 
 /**
  * Dependencies that can be injected into the Orchestrator
@@ -42,6 +45,8 @@ export interface OrchestratorDependencies {
   llmClient?: LLMClient;
   skillActivator?: SkillActivator;
   skillExecutor?: SkillExecutor;
+  prepromptHydrator?: PrepromptHydrator;
+  guardrailEngine?: GuardrailEngine;
 }
 
 export class Orchestrator extends EventEmitter {
@@ -58,6 +63,8 @@ export class Orchestrator extends EventEmitter {
   private postToolUseHook: PostToolUseHook;
   private stopHook: StopHook;
   private subagentStopHook: SubagentStopHook;
+  private prepromptHydrator: PrepromptHydrator | null;
+  private guardrailEngine: GuardrailEngine | null;
   private initialized: boolean = false;
 
   constructor(config?: Partial<OrchestratorConfig>, dependencies?: OrchestratorDependencies) {
@@ -98,6 +105,10 @@ export class Orchestrator extends EventEmitter {
       this.skillExecutor = executor;
     }
 
+    // Wire optional PrepromptHydrator and GuardrailEngine
+    this.prepromptHydrator = dependencies?.prepromptHydrator ?? null;
+    this.guardrailEngine = dependencies?.guardrailEngine ?? null;
+
     // Initialize UOCS and hooks
     this.uocs = new UOCS();
     this.postToolUseHook = new PostToolUseHook({ uocs: this.uocs });
@@ -136,6 +147,9 @@ export class Orchestrator extends EventEmitter {
   }
 
   async process(request: TaskRequest): Promise<TaskResult> {
+    // Start decision trace for this request
+    const trace = new DecisionTrace(request.sessionId);
+
     // Validate input
     const validation = this.securityManager.validateInput(request.input);
     if (!validation.valid) {
@@ -154,6 +168,56 @@ export class Orchestrator extends EventEmitter {
     const sanitizedInput = this.securityManager.sanitizeInput(request.input);
     const sanitizedRequest = { ...request, input: sanitizedInput };
 
+    // Guardrail evaluation (if engine is available)
+    if (this.guardrailEngine) {
+      const guardrailInput: GuardrailCheckInput = {
+        operation: 'process',
+        content: sanitizedInput,
+        metadata: { sessionId: request.sessionId },
+      };
+
+      const guardrailResult = this.guardrailEngine.evaluate(guardrailInput);
+
+      trace.recordDecision({
+        type: 'guardrail_check',
+        inputSummary: sanitizedInput.substring(0, 100),
+        candidates: [],
+        selected: guardrailResult.allowed ? 'proceed' : 'blocked',
+        selectionReason: guardrailResult.allowed
+          ? 'All guardrails passed'
+          : `Blocked: ${guardrailResult.violations.map((v) => v.message).join('; ')}`,
+        guardrailResult: !guardrailResult.allowed
+          ? 'block'
+          : guardrailResult.warnings.length > 0
+            ? 'warn'
+            : 'pass',
+        metadata: {
+          violations: guardrailResult.violations.length,
+          warnings: guardrailResult.warnings,
+        },
+      });
+
+      // If critical violations, abort
+      if (!guardrailResult.allowed) {
+        const criticalViolations = guardrailResult.violations.filter(
+          (v) => v.severity === 'critical'
+        );
+        if (criticalViolations.length > 0) {
+          return {
+            taskId: request.id || 'unknown',
+            success: false,
+            error: new Error(
+              `Guardrail violation: ${criticalViolations.map((v) => v.message).join('; ')}`
+            ),
+            metadata: {
+              startTime: new Date(),
+              retries: 0,
+            },
+          };
+        }
+      }
+    }
+
     // Auto-start session if not already active
     if (request.sessionId && !this.uocs.getActiveSessionIds().includes(request.sessionId)) {
       await this.startSession(request.sessionId);
@@ -167,7 +231,7 @@ export class Orchestrator extends EventEmitter {
       await this.taskManager.startTask(task.id);
 
       // Execute with error handling
-      const result = await this.errorHandler.handle(() => this.executeTask(task), {
+      const result = await this.errorHandler.handle(() => this.executeTask(task, trace), {
         taskId: task.id,
         sessionId: request.sessionId,
         timestamp: new Date(),
@@ -175,6 +239,12 @@ export class Orchestrator extends EventEmitter {
 
       // Complete task
       this.taskManager.completeTask(task.id, result);
+
+      // Finalize decision trace and persist via UOCS
+      const traceResult = trace.finalize();
+      this.persistDecisionTrace(request.sessionId, traceResult).catch(() => {
+        // Non-fatal: trace persistence failure should not break the pipeline
+      });
 
       // Sanitize output
       const sanitizedResult: TaskResult = {
@@ -193,6 +263,9 @@ export class Orchestrator extends EventEmitter {
     } catch (error) {
       this.taskManager.failTask(task.id, error as Error);
 
+      // Still finalize trace on failure
+      trace.finalize();
+
       return {
         taskId: task.id,
         success: false,
@@ -202,7 +275,7 @@ export class Orchestrator extends EventEmitter {
     }
   }
 
-  private async executeTask(task: Task): Promise<Partial<TaskResult>> {
+  private async executeTask(task: Task, trace?: DecisionTrace): Promise<Partial<TaskResult>> {
     const { request } = task;
 
     // Check if we can create an agent
@@ -213,6 +286,20 @@ export class Orchestrator extends EventEmitter {
     // Determine agent type based on preferred agent or default
     const agentType = this.determineAgentType(request.options?.preferredSkill);
 
+    // Record agent selection decision
+    trace?.recordDecision({
+      type: 'agent_selection',
+      inputSummary: request.input.substring(0, 100),
+      candidates: [
+        { name: agentType, score: 1.0, reason: 'Selected based on skill mapping' },
+      ],
+      selected: agentType,
+      selectionReason: request.options?.preferredSkill
+        ? `Mapped from skill: ${request.options.preferredSkill}`
+        : 'Default agent (no skill preference)',
+      metadata: { preferredSkill: request.options?.preferredSkill },
+    });
+
     // Spawn agent
     const agent = this.agentSpawner.spawnByName(agentType, request.sessionId);
 
@@ -222,6 +309,20 @@ export class Orchestrator extends EventEmitter {
     try {
       // Activate relevant skill based on request content
       await this.activateSkillForRequest(request);
+
+      // Record skill routing decision
+      trace?.recordDecision({
+        type: 'skill_selection',
+        inputSummary: request.input.substring(0, 100),
+        candidates: request.options?.preferredSkill
+          ? [{ name: request.options.preferredSkill, score: 1.0, reason: 'Explicitly preferred' }]
+          : [],
+        selected: request.options?.preferredSkill || 'auto',
+        selectionReason: request.options?.preferredSkill
+          ? 'User-specified skill preference'
+          : 'Automatic skill routing',
+        metadata: {},
+      });
 
       // Build execution context with tools and LLM client
       const executionContext = this.buildExecutionContext(request, agent);
@@ -305,6 +406,10 @@ export class Orchestrator extends EventEmitter {
 
   /**
    * Build system prompt with context
+   *
+   * If a PrepromptHydrator is available, uses its hydrated context
+   * (CORE identity, preferences, skill context) as a prefix.
+   * Falls back to a static prompt otherwise.
    */
   private buildSystemPrompt(request: TaskRequest): string {
     const basePrompt = `You are CAM, an AI orchestrator and personal assistant.
@@ -314,6 +419,14 @@ Session: ${request.sessionId}
 ${request.context ? `Additional Context: ${JSON.stringify(request.context)}` : ''}
 
 When you need to perform actions, use the available tools. Think step by step about what needs to be done.`;
+
+    // If hydrator is available, prepend hydrated context
+    if (this.prepromptHydrator) {
+      const hydratedContext = this.prepromptHydrator.getHydratedContext();
+      if (hydratedContext) {
+        return `${hydratedContext}\n\n${basePrompt}`;
+      }
+    }
 
     return basePrompt;
   }
@@ -394,6 +507,38 @@ When you need to perform actions, use the available tools. Think step by step ab
     } catch {
       // Skill activation failure is non-fatal - agent can still work without tools
     }
+  }
+
+  /**
+   * Persist decision trace to UOCS for audit trail
+   */
+  private async persistDecisionTrace(
+    sessionId: string,
+    traceResult: ReturnType<DecisionTrace['finalize']>
+  ): Promise<void> {
+    if (traceResult.totalDecisions === 0) {
+      return;
+    }
+
+    const summary = traceResult.decisions
+      .map((d) => `${d.type}: ${d.selected} (${d.selectionReason})`)
+      .join('; ');
+
+    await this.uocs.captureDecision(
+      sessionId,
+      `Request routing trace ${traceResult.traceId}`,
+      summary,
+      `${traceResult.totalDecisions} decisions recorded`,
+      traceResult.decisions.map((d) => `${d.type}:${d.selected}`)
+    );
+  }
+
+  getPrepromptHydrator(): PrepromptHydrator | null {
+    return this.prepromptHydrator;
+  }
+
+  getGuardrailEngine(): GuardrailEngine | null {
+    return this.guardrailEngine;
   }
 
   getSkillActivator(): SkillActivator | null {

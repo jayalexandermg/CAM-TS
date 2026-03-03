@@ -8,6 +8,7 @@
 export * from './types';
 export * from './TaskManager';
 export * from './Orchestrator';
+export * from './DecisionTrace';
 export * from './errors';
 export * from './security';
 export * from './llm';
