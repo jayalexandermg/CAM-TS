@@ -8,6 +8,7 @@
  */
 
 import * as readline from 'readline';
+import * as path from 'path';
 import { CommandRouter } from './CommandRouter';
 import { CommandParser } from './CommandParser';
 import { SessionManager } from './session/SessionManager';
@@ -21,6 +22,8 @@ import { PrepromptInjector } from '../context/PrepromptInjector';
 import { OrchestratorBridge } from './OrchestratorBridge';
 import { CommandNotFoundError } from './errors';
 import { SessionTranscript, Learning, Decision } from '../history/types';
+import { SessionJournal } from '../memory/passdown/SessionJournal';
+import { EOSPassdownManager } from '../memory/passdown/EOSPassdownManager';
 
 /**
  * Options for InteractiveMode
@@ -36,6 +39,8 @@ export interface InteractiveModeOptions {
   showWelcome?: boolean;
   /** Custom output function for messages */
   outputFn?: (message: string) => void;
+  /** Skip session rituals (greeting, SOS brief, EOS checkin) — useful for tests */
+  skipRituals?: boolean;
 }
 
 /**
@@ -69,6 +74,8 @@ export class InteractiveMode {
   private sessionStartHook?: SessionStartHook;
   private uocsSessionStarted: boolean = false;
   private interactionMode: InteractionMode = 'ideation';
+  private journal?: SessionJournal;
+  private passdownManager?: EOSPassdownManager;
 
   /**
    * Create a new InteractiveMode instance
@@ -97,6 +104,7 @@ export class InteractiveMode {
       prompt: options.prompt ?? 'cam> ',
       showWelcome: options.showWelcome ?? true,
       outputFn: options.outputFn ?? console.log,
+      skipRituals: options.skipRituals ?? false,
     };
 
     this.bridge = bridge || new OrchestratorBridge();
@@ -129,9 +137,26 @@ export class InteractiveMode {
     // Trigger SessionStart hook
     await this.triggerSessionStart();
 
-    // Display welcome
+    // Initialize session journal and passdown manager (unless rituals skipped)
+    if (!this.options.skipRituals) {
+      const memoryBase = path.join(
+        process.env.HOME || '~',
+        '.infinite-aura-ts',
+        'memory'
+      );
+      this.passdownManager = new EOSPassdownManager(memoryBase);
+      this.journal = new SessionJournal(memoryBase);
+      await this.passdownManager.initialize();
+      await this.journal.start(this.session!.getId());
+    }
+
+    // Display welcome (with rituals or static)
     if (this.options.showWelcome) {
-      this.displayWelcome();
+      if (!this.options.skipRituals && this.passdownManager && this.journal) {
+        await this.displayWelcomeAndBrief();
+      } else {
+        this.displayWelcome();
+      }
     }
 
     // Start REPL
@@ -226,8 +251,11 @@ export class InteractiveMode {
       return;
     }
 
-    // Handle exit
+    // Handle exit — run EOS checkin on existing rl before closing
     if (input === 'exit' || input === 'quit') {
+      if (this.journal && this.passdownManager && this.rl) {
+        await this.runEOSCheckin();
+      }
       this.rl?.close();
       return;
     }
@@ -252,6 +280,7 @@ export class InteractiveMode {
       this.setMode('ideation');
       this.options.outputFn('\nSwitched to ideation mode - natural conversation with CAM');
       this.options.outputFn('Use /do or /execute to switch to execution mode\n');
+      if (this.journal) await this.journal.log('mode_switch', 'Switched to ideation mode');
       return;
     }
 
@@ -261,6 +290,7 @@ export class InteractiveMode {
         '\nSwitched to execution mode - CAM will orchestrate agents to execute tasks'
       );
       this.options.outputFn('Use /chat or /ideate to switch to ideation mode\n');
+      if (this.journal) await this.journal.log('mode_switch', 'Switched to execution mode');
       return;
     }
 
@@ -353,6 +383,10 @@ export class InteractiveMode {
         const response = await this.bridge.processInput(input, this.session);
         this.options.outputFn(`\n${response}\n`);
         this.session.addTurn(input, response);
+      }
+      // Log turn to session journal
+      if (this.journal) {
+        await this.journal.log('turn', input.substring(0, 150));
       }
     } catch (bridgeError) {
       const bridgeMessage =
@@ -723,6 +757,135 @@ export class InteractiveMode {
    */
   getBridge(): OrchestratorBridge {
     return this.bridge;
+  }
+
+  /**
+   * Display LLM-generated greeting and SOS brief (if previous EOS exists)
+   * Runs greeting + brief generation in parallel with a timeout fallback.
+   */
+  private async displayWelcomeAndBrief(): Promise<void> {
+    const userName = this.extractUserName();
+
+    // Fire greeting + EOS lookup in parallel
+    const greetingPromise = Promise.race([
+      this.bridge.generateGreeting(userName),
+      new Promise<string>((resolve) =>
+        setTimeout(() => resolve(`Hey ${userName}, ready when you are.`), 5000)
+      ),
+    ]);
+
+    const latestEOS = await this.passdownManager!.getLatestEOS();
+
+    const briefPromise = latestEOS
+      ? this.bridge.generateSOSBrief(latestEOS, userName)
+      : Promise.resolve(null);
+
+    const [greeting, brief] = await Promise.all([greetingPromise, briefPromise]);
+
+    this.options.outputFn('');
+    this.options.outputFn(greeting);
+
+    if (brief) {
+      this.options.outputFn('\n─────────────────────────────');
+      this.options.outputFn(brief);
+      this.options.outputFn('─────────────────────────────\n');
+      await this.passdownManager!.writeSOS(this.session!.getId(), brief);
+    } else {
+      this.options.outputFn('(No previous session — starting fresh)\n');
+    }
+
+    this.options.outputFn(
+      'Type freely to talk. Commands: help | status | /do | exit\n'
+    );
+  }
+
+  /**
+   * Run 4-step EOS checkin using the existing readline interface
+   */
+  private async runEOSCheckin(): Promise<void> {
+    if (!this.rl || !this.session || !this.journal || !this.passdownManager) return;
+
+    const ask = (prompt: string): Promise<string> => {
+      return new Promise((resolve) => {
+        this.rl!.question(prompt, (answer) => resolve(answer.trim()));
+      });
+    };
+
+    this.options.outputFn('\n── EOS Checkin ──');
+
+    // Step 1: Open threads
+    const questions = await ask(
+      'Any open threads to close before I write the passdown? (Enter to skip): '
+    );
+
+    // Step 2: Energy level
+    const energy = await ask('Energy level (1-5): ');
+
+    // Step 3: Brain dump
+    const brainDump = await ask(
+      'Anything else? Ideas, concerns? (Enter to skip): '
+    );
+
+    // Step 4: Generate & save
+    this.options.outputFn('\nGenerating EOS passdown...');
+
+    await this.journal.log('session_end', 'Session ending via EOS checkin');
+
+    const journalSummary = await this.journal.getFormattedSummary();
+    const duration = this.formatDuration(this.session.getDurationMs());
+    const userName = this.extractUserName();
+
+    const passdown = await this.bridge.generateEOSPassdown(
+      journalSummary,
+      { duration, turnCount: this.session.getTurnCount() },
+      userName,
+      { questions, energy, brainDump }
+    );
+
+    const filePath = await this.passdownManager.writeEOS(
+      this.session.getId(),
+      passdown
+    );
+    this.options.outputFn(`EOS passdown saved → ${filePath}`);
+
+    // Wipe journal — passdown is now the durable artifact
+    await this.journal.wipe();
+  }
+
+  /**
+   * Extract userName from CORE context loaded by SessionStartHook
+   */
+  private extractUserName(): string {
+    const context = this.sessionStartHook?.getLastLoadedContext();
+    if (context?.user) {
+      const match = context.user.match(/\*\*Name:\*\*\s*(.+)/);
+      if (match) return match[1].trim();
+    }
+    return 'there';
+  }
+
+  /**
+   * Format milliseconds into a human-readable duration string
+   */
+  private formatDuration(ms: number): string {
+    const minutes = Math.floor(ms / 60000);
+    if (minutes < 60) return `${minutes}m`;
+    const hours = Math.floor(minutes / 60);
+    return `${hours}h ${minutes % 60}m`;
+  }
+
+  /**
+   * Get the session journal (for testing/inspection)
+   */
+  getJournal(): SessionJournal | undefined {
+    return this.journal;
+  }
+
+  /**
+   * Get the passdown manager (for testing/inspection)
+   */
+  getPassdownManager(): EOSPassdownManager | undefined {
+    return this.passdownManager;
   }
 
   /**
